@@ -69,6 +69,34 @@
       this.$(`#${this.name}-${this.value}`).attr('checked', 'checked');
     },
   });
+
+  const AudioNotificationFileSettingView = Whisper.View.extend({
+    initialize(options) {
+      this.name = options.name;
+      this.setFn = options.setFn;
+      this.value = options.value;
+      this.populate();
+    },
+    events: {
+      'click #audio-notification-file': 'click',
+      change: 'change',
+    },
+    click() {
+      window.log.info('CLICK');
+    },
+    change(e) {
+      const fileField = this.$('input.file-input');
+      const file = fileField.prop('files')[0];
+      this.setFn(file.path);
+      window.log.info(this.name, 'changed to', file.path);
+    },
+    populate() {
+      window.log.info(`File element can't be populated: ${this.value}`);
+      this.$('#current-audio-file').text(this.value);
+    },
+  });
+
+
   Whisper.SettingsView = Whisper.View.extend({
     className: 'settings modal expand',
     templateName: 'settings',
@@ -98,6 +126,12 @@
           name: 'audio-notification-setting',
           value: window.initialData.audioNotification,
           setFn: window.setAudioNotification,
+        });
+        new AudioNotificationFileSettingView({
+          el: this.$('.choose-audio-file'),
+          name: 'audio-notification-file-setting',
+          value: window.initialData.audioNotificationFile,
+          setFn: window.setAudioNotificationFile,
         });
       }
       new CheckboxView({

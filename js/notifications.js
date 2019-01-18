@@ -142,6 +142,22 @@
 
       drawAttention();
 
+      // If this is linux and audio notifications are enabled, let's make a noise
+      if(isAudioNotificationEnabled && isAudioNotificationSupported && Signal.OS.isLinux()) {
+        const audioSource = storage.get('audio-notification-file') != undefined ? storage.get('audio-notification-file') : 'notifications/graceful.ogg';
+        window.log.info(`Platform is linux...manually playing notification sound: '${audioSource}'`);
+        const noise = new Audio(audioSource);
+        noise.play()
+          .catch(error => {
+            window.log.error(`Failed to play notification sound: '${error.message}'. Trying default notification sound...`);
+            const dNoise = new Audio('notifications/graceful.ogg');
+            dNoise.play()
+              .catch(error => {
+                window.log.error(`Failed to play default notification sound, as well: '${error.message}'`);
+              });
+          });
+      }
+
       const notification = new Notification(title, {
         body: message,
         icon: iconUrl,
