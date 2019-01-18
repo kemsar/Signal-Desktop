@@ -85,6 +85,10 @@
       <input type='checkbox' name='audio-notification' id='audio-notification'/>
       <label for='audio-notification'>{{ audioNotificationDescription }}</label>
     </div>
+    <div class='choose-file choose-audio-file'>
+      <input type='file' name='audio-notification-file' id='audio-notification-file' class='file-input'/>
+      <br/><span id='current-audio-file-span'>(Current:  <span id='current-audio-file'>Default</span>)</span>
+    </div>
     {{ /isAudioNotificationSupported }}
     <hr>
     <div class='spell-check-setting'>

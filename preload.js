@@ -123,6 +123,8 @@ installGetter('notification-setting', 'getNotificationSetting');
 installSetter('notification-setting', 'setNotificationSetting');
 installGetter('audio-notification', 'getAudioNotification');
 installSetter('audio-notification', 'setAudioNotification');
+installGetter('audio-notification-file', 'getAudioNotificationFile');
+installSetter('audio-notification-file', 'setAudioNotificationFile');
 
 installGetter('spell-check', 'getSpellCheck');
 installSetter('spell-check', 'setSpellCheck');
