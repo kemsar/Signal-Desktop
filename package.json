@@ -236,6 +236,7 @@
       "debug_log_preload.js",
       "main.js",
       "images/**",
+      "notifications/**",
       "fonts/*",
       "build/assets",
       "node_modules/**",
