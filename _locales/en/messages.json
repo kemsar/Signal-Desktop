@@ -1737,6 +1737,10 @@
       }
     }
   },
+  "audioNotificationFileDescription": {
+    "message": "Audio file to use for notifications",
+    "description": "Shown in settings where user selects audio file to be used for notifications"
+  },
 
   "ConversationListItem--draft-prefix": {
     "message": "Draft:",
