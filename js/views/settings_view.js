@@ -84,7 +84,7 @@
     click() {
       window.log.info('CLICK');
     },
-    change(e) {
+    change() {
       const fileField = this.$('input.file-input');
       const file = fileField.prop('files')[0];
       this.setFn(file.path);
@@ -95,7 +95,6 @@
       this.$('#current-audio-file').text(this.value);
     },
   });
-
 
   Whisper.SettingsView = Whisper.View.extend({
     className: 'settings modal expand',

@@ -243,7 +243,8 @@
       getAudioNotification: () => storage.get('audio-notification'),
       setAudioNotification: value => storage.put('audio-notification', value),
       getAudioNotificationFile: () => storage.get('audio-notification-file'),
-      setAudioNotificationFile: value => storage.put('audio-notification-file', value),
+      setAudioNotificationFile: value =>
+        storage.put('audio-notification-file', value),
 
       getSpellCheck: () => storage.get('spell-check', true),
       setSpellCheck: value => {
