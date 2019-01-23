@@ -1,4 +1,6 @@
-[![Build Status](https://travis-ci.org/signalapp/Signal-Desktop.svg?branch=master)](https://travis-ci.org/signalapp/Signal-Desktop)
+KS Version: [![Build Status](https://travis-ci.org/kevinsarsen/Signal-Desktop.svg?branch=development)](https://travis-ci.org/kevinsarsen/Signal-Desktop)
+
+Official Version: [![Build Status](https://travis-ci.org/signalapp/Signal-Desktop.svg?branch=master)](https://travis-ci.org/signalapp/Signal-Desktop)
 [![Build Status](https://ci.appveyor.com/api/projects/status/github/signalapp/Signal-Desktop?branch=master&svg=true)](https://ci.appveyor.com/project/Signal-Desktop/signal-desktop)
 
 # Signal Desktop

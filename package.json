@@ -2,8 +2,8 @@
   "name": "signal-desktop",
   "productName": "Signal",
   "description": "Private messaging from your desktop",
-  "repository": "https://github.com/signalapp/Signal-Desktop.git",
-  "version": "1.20.0-beta.3",
+  "repository": "https://github.com/kevinsarsen/Signal-Desktop.git",
+  "version": "1.21.0-ks-beta.0",
   "license": "GPL-3.0",
   "author": {
     "name": "Open Whisper Systems",
@@ -263,6 +263,12 @@
       "node_modules/socks/build/client/*.js",
       "node_modules/smart-buffer/build/*.js",
       "!node_modules/@journeyapps/sqlcipher/deps/*"
-    ]
+    ],
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "kevinsarsen",
+        "repo": "Signal-Desktop"
+      }]
   }
 }
