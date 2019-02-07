@@ -193,7 +193,8 @@
       },
       "asarUnpack": "node_modules/spellchecker/vendor/hunspell_dictionaries",
       "target": [
-        "deb"
+        "deb",
+        "AppImage"
       ],
       "icon": "build/icons/png"
     },

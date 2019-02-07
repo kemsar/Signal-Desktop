@@ -28,6 +28,8 @@ test/test.js
 ts/**/*.js
 ts/protobuf/*.d.ts
 
-\.idea/workspace\.xml
+*.log
+
+package-lock\.json
 
 \.idea/
