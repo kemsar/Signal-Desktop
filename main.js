@@ -27,7 +27,7 @@ const {
 } = electron;
 
 // for notification sounds
-app.commandLine.appendSwitch('--autoplay-policy','no-user-gesture-required');
+app.commandLine.appendSwitch('--autoplay-policy', 'no-user-gesture-required');
 
 const appUserModelId = `org.whispersystems.${packageJson.name}`;
 console.log('Set Windows Application User Model ID (AUMID)', {
@@ -151,6 +151,7 @@ function prepareURL(pathSegments, moreKeys) {
       hostname: os.hostname(),
       appInstance: process.env.NODE_APP_INSTANCE,
       proxyUrl: process.env.HTTPS_PROXY || process.env.https_proxy,
+      contentProxyUrl: config.contentProxyUrl,
       importMode: importMode ? true : undefined, // for stringify()
       serverTrustRoot: config.get('serverTrustRoot'),
       ...moreKeys,
@@ -212,6 +213,10 @@ function createWindow() {
       minWidth: MIN_WIDTH,
       minHeight: MIN_HEIGHT,
       autoHideMenuBar: false,
+      backgroundColor:
+        config.environment === 'test' || config.environment === 'test-lib'
+          ? '#ffffff' // Tests should always be rendered on a white background
+          : '#2090EA',
       webPreferences: {
         nodeIntegration: false,
         nodeIntegrationInWorker: false,
@@ -635,12 +640,12 @@ app.on('ready', async () => {
     loggingSetupError = error;
   }
 
+  if (loggingSetupError) {
+    console.error('Problem setting up logging', loggingSetupError.stack);
+  }
+
   logger = logging.getLogger();
   logger.info('app ready');
-
-  if (loggingSetupError) {
-    logger.error('Problem setting up logging', loggingSetupError.stack);
-  }
 
   if (!locale) {
     const appLocale = process.env.NODE_ENV === 'test' ? 'en' : app.getLocale();
@@ -917,22 +922,26 @@ installSettingsGetter('audio-notification-file');
 // Setter is a little different for notification audio file because we need
 // to copy the file from the user's file system to a directory we
 // can consistently access....the userData directory.
-ipc.on('set-audio-notification-file', (event,value) => {
+ipc.on('set-audio-notification-file', (event, value) => {
   const name = 'audio-notification-file';
 
   // get the filename
   const filename = path.basename(value);
 
   // if notifications directory doesn't exist in userData, create it
-  if(!fs.existsSync(path.join(app.getPath('userData'),'Notifications'))){
-    fs.mkdirSync(path.join(app.getPath('userData'),'Notifications'));
+  if (!fs.existsSync(path.join(app.getPath('userData'), 'Notifications'))) {
+    fs.mkdirSync(path.join(app.getPath('userData'), 'Notifications'));
   }
 
   // destination file
-  const destination = path.join(app.getPath('userData'),'Notifications',filename);
+  const destination = path.join(
+    app.getPath('userData'),
+    'Notifications',
+    filename
+  );
 
   // copy it
-  fs.copyFile(value, destination, (err) => {
+  fs.copyFile(value, destination, err => {
     if (err) throw err;
     console.log(`${value} copied to ${destination}`);
   });
@@ -948,7 +957,6 @@ ipc.on('set-audio-notification-file', (event,value) => {
     });
     mainWindow.webContents.send(`set-${name}`, destination);
   }
-
 });
 
 installSettingsGetter('spell-check');

@@ -84,7 +84,7 @@
     click() {
       window.log.info('CLICK');
     },
-    change(e) {
+    change() {
       const fileField = this.$('input.file-input');
       const file = fileField.prop('files')[0];
       this.setFn(file.path);
@@ -95,7 +95,6 @@
       this.$('#current-audio-file').text(this.value);
     },
   });
-
 
   Whisper.SettingsView = Whisper.View.extend({
     className: 'settings modal expand',
@@ -182,8 +181,10 @@
         clearDataExplanation: i18n('clearDataExplanation'),
         permissions: i18n('permissions'),
         mediaPermissionsDescription: i18n('mediaPermissionsDescription'),
-        spellCheckHeader: i18n('spellCheck'),
+        generalHeader: i18n('general'),
         spellCheckDescription: i18n('spellCheckDescription'),
+        sendLinkPreviews: i18n('sendLinkPreviews'),
+        linkPreviewsDescription: i18n('linkPreviewsDescription'),
       };
     },
     onClose() {
