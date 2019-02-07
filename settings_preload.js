@@ -40,6 +40,8 @@ window.getNotificationSetting = makeGetter('notification-setting');
 window.setNotificationSetting = makeSetter('notification-setting');
 window.getAudioNotification = makeGetter('audio-notification');
 window.setAudioNotification = makeSetter('audio-notification');
+window.getAudioNotificationFile = makeGetter('audio-notification-file');
+window.setAudioNotificationFile = makeSetter('audio-notification-file');
 
 window.getMediaPermissions = makeGetter('media-permissions');
 window.setMediaPermissions = makeSetter('media-permissions');

@@ -44,6 +44,16 @@
     margin-top: 1em;
   }
 
+  .choose-audio-file {
+    margin-left: 25px;
+    margin-top: 10px;
+  }
+
+  #current-audio-file-span {
+    color: grey;
+    line-height: 30px;
+    font-size: smaller;
+  }
   .clear-data-settings {
     button {
       float: right;
