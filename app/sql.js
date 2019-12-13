@@ -1,7 +1,7 @@
 const { join } = require('path');
 const mkdirp = require('mkdirp');
 const rimraf = require('rimraf');
-const sql = require('@journeyapps/sqlcipher');
+const sql = require('@mapbox/node-sqlite3');
 const { app, dialog, clipboard } = require('electron');
 const { redactAll } = require('../js/modules/privacy');
 const { remove: removeUserConfig } = require('./user_config');

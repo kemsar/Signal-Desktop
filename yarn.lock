@@ -34,12 +34,13 @@
     ajv "^6.1.0"
     ajv-keywords "^3.1.0"
 
-"@journeyapps/sqlcipher@https://github.com/scottnonnenberg-signal/node-sqlcipher.git#00fd0f8a6623c6683280976d2a92b41d09c744bc":
-  version "4.0.0"
-  resolved "https://github.com/scottnonnenberg-signal/node-sqlcipher.git#00fd0f8a6623c6683280976d2a92b41d09c744bc"
+"@mapbox/node-sqlite3@https://github.com/mapbox/node-sqlite3.git":
+  version "4.1.1"
+  resolved "https://github.com/mapbox/node-sqlite3.git#1afb9152780b681ec6eaeeadfe98b0f70b274449"
   dependencies:
     nan "^2.12.1"
     node-pre-gyp "^0.11.0"
+    request "^2.87.0"
 
 "@protobufjs/aspromise@^1.1.1", "@protobufjs/aspromise@^1.1.2":
   version "1.1.2"
