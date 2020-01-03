@@ -1385,6 +1385,7 @@
         });
       }
     });
+
   }
 
   window.getSyncRequest = () =>

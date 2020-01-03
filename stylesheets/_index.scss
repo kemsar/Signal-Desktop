@@ -5,6 +5,7 @@
   height: 100%;
   overflow: hidden;
   position: relative;
+  z-index: 50;
 }
 
 .expired {
@@ -42,13 +43,91 @@
   }
 
   float: left;
-  width: $left-pane-width;
+  max-width: $left-pane-width;
   user-select: none;
 
   .content {
     overflow-y: scroll;
     max-height: calc(100% - 88px);
   }
+
+}
+
+//.gutter-toggle {
+//  float: left;
+//  width: 5px;
+//  height: 100%;
+//  position: relative;
+//  @include light-theme {
+//    background-color: $color-gray-02;
+//  }
+//  @include dark-theme {
+//    background-color: $color-gray-80;
+//  }
+//}
+
+.gutter-toggle {
+    @include light-theme {
+      background-color: $color-gray-02;
+    }
+    @include dark-theme {
+      background-color: $color-gray-80;
+    }
+  width: 24px;
+  height: 48px;
+  position: absolute;
+  top: calc(50% - 24px);
+  left: $left-pane-width;
+  border-radius: 0px 12px 12px 0px;
+  opacity: 0;
+  transition: opacity 200ms ease-out;
+  z-index: 100;
+  &:hover {
+    opacity: 1;
+  }
+
+  &__button {
+    height: 48px;
+    width: 24px;
+    border: none;
+
+    &-expanded {
+      @include light-theme() {
+        @include color-svg(
+            '../images/icons/v2/chevron-left-16.svg',
+            $color-gray-45,
+            false
+        );
+      }
+
+      @include dark-theme() {
+        @include color-svg(
+            '../images/icons/v2/chevron-left-16.svg',
+            $color-gray-45,
+            false
+        );
+      }
+    }
+
+    &-collapsed {
+      @include light-theme() {
+        @include color-svg(
+            '../images/icons/v2/chevron-right-16.svg',
+            $color-gray-45,
+            false
+        );
+      }
+
+      @include dark-theme() {
+        @include color-svg(
+            '../images/icons/v2/chevron-right-16.svg',
+            $color-gray-45,
+            false
+        );
+      }
+    }
+  }
+
 }
 
 .network-status-container {
@@ -93,6 +172,11 @@
 .left-pane-placeholder {
   height: 100%;
 }
+
+.left-pane-collapsible {
+  height: 100%;
+}
+
 .left-pane-wrapper {
   height: 100%;
 }

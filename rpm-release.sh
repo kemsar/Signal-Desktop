@@ -9,7 +9,7 @@ sudo dnf install -y yarn python27 fedora-packager gcc-c++ @development-tools
 
 yarn install --frozen-lockfile
 
-find ./patches -type f -name '*.patch' -print0 | sort -z | xargs -t -0 -n 1 patch -p1 -i
+find ./patches -type f -name '*.patch' -print0 | sort -z | xargs -t -0 -n 1 patch -N -p1 -i
 
 #patch -p1 < ./patches/openssl-linking.patch
 #sudo chattr +i node_modules/@journeyapps/sqlcipher/deps/sqlite3.gyp

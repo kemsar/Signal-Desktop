@@ -4674,8 +4674,10 @@ button.module-image__border-overlay:focus {
   display: inline-flex;
   flex-direction: column;
 
-  width: $left-pane-width;
+  max-width: $left-pane-width;
   height: 100%;
+  float: left;
+  position: relative;
 }
 
 .module-left-pane__header {

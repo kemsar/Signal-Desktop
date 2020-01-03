@@ -131,12 +131,35 @@
       if (this.leftPaneView) {
         return;
       }
+      this.leftPaneCollapsed=false;
+      document.getElementById('toggleGutterCollapseButton').classList.add('gutter-toggle__button-expanded');
       this.leftPaneView = new Whisper.ReactWrapperView({
         className: 'left-pane-wrapper',
         JSX: Signal.State.Roots.createLeftPane(window.reduxStore),
       });
 
       this.$('.left-pane-placeholder').append(this.leftPaneView.el);
+
+      function toggleLeftPaneCollapse() {
+        if(this.leftPaneCollapsed){
+          document.getElementById('gutter').style.width = null;
+          document.querySelector('#gutter > div.left-pane-placeholder > div > div > div.module-left-pane__header > div > div.module-main-header__search').style.display=null;
+          document.querySelector('body > div > div.gutter-toggle').style.left=null;
+          document.getElementById('toggleGutterCollapseButton').classList.add('gutter-toggle__button-expanded');
+          document.getElementById('toggleGutterCollapseButton').classList.remove('gutter-toggle__button-collapsed');
+          this.leftPaneCollapsed=false;
+        } else {
+          document.getElementById('gutter').style.width = '80px';
+          document.querySelector('#gutter > div.left-pane-placeholder > div > div > div.module-left-pane__header > div > div.module-main-header__search').style.display='none';
+          document.querySelector('body > div > div.gutter-toggle').style.left='80px';
+          document.getElementById('toggleGutterCollapseButton').classList.remove('gutter-toggle__button-expanded');
+          document.getElementById('toggleGutterCollapseButton').classList.add('gutter-toggle__button-collapsed');
+          this.leftPaneCollapsed=true;
+        }
+      }
+
+      document.getElementById('toggleGutterCollapseButton').addEventListener('click', toggleLeftPaneCollapse);
+      document.querySelector('#gutter').addEventListener('dblclick',toggleLeftPaneCollapse);
     },
     startConnectionListener() {
       this.interval = setInterval(() => {
