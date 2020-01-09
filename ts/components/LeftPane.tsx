@@ -359,11 +359,6 @@ export class LeftPane extends React.Component<PropsType> {
 
     return [archived, list];
   };
-  public renderToggleCollapse = (): JSX.Element => {
-    return (
-      <div className="gutter-toggle">&nbsp;</div>
-    );
-  };
 
   public renderArchivedHeader = (): JSX.Element => {
     const { i18n, showInbox } = this.props;

@@ -47,8 +47,8 @@ function getMainWindow() {
 // Tray icon and related objects
 let tray = null;
 const startInTray = process.argv.some(arg => arg === '--start-in-tray');
-const usingTrayIcon =
-  startInTray || process.argv.some(arg => arg === '--use-tray-icon');
+const usingTrayIcon = true;
+  // startInTray || process.argv.some(arg => arg === '--use-tray-icon');
 
 const disableFlashFrame = process.argv.some(
   arg => arg === '--disable-flash-frame'
@@ -194,7 +194,7 @@ function captureClicks(window) {
 
 const DEFAULT_WIDTH = 800;
 const DEFAULT_HEIGHT = 610;
-const MIN_WIDTH = 640;
+const MIN_WIDTH = 300; // 640;
 const MIN_HEIGHT = 550;
 const BOUNDS_BUFFER = 100;
 
