@@ -1,6 +1,9 @@
 import React from 'react';
-import ReactDOM from 'react-dom';
+import ReactDOM, { createPortal } from 'react-dom';
 import classNames from 'classnames';
+import Measure from 'react-measure';
+import { drop, groupBy, orderBy, take } from 'lodash';
+import { Manager, Popper, Reference } from 'react-popper';
 
 import { Avatar } from '../Avatar';
 import { Spinner } from '../Spinner';
@@ -12,6 +15,12 @@ import { Timestamp } from './Timestamp';
 import { ContactName } from './ContactName';
 import { Quote, QuotedAttachmentType } from './Quote';
 import { EmbeddedContact } from './EmbeddedContact';
+import {
+  OwnProps as ReactionViewerProps,
+  ReactionViewer,
+} from './ReactionViewer';
+import { ReactionPicker } from './ReactionPicker';
+import { Emoji } from '../emoji/Emoji';
 
 import {
   canDisplayImage,
@@ -31,6 +40,7 @@ import { ContactType } from '../../types/Contact';
 import { getIncrement } from '../../util/timer';
 import { isFileDangerous } from '../../util/isFileDangerous';
 import { ColorType, LocalizerType } from '../../types/Util';
+import { mergeRefs } from '../_util';
 import { ContextMenu, ContextMenuTrigger, MenuItem } from 'react-contextmenu';
 
 interface Trigger {
@@ -39,7 +49,7 @@ interface Trigger {
 
 // Same as MIN_WIDTH in ImageGrid.tsx
 const MINIMUM_LINK_PREVIEW_IMAGE_WIDTH = 200;
-const STICKER_SIZE = 128;
+const STICKER_SIZE = 200;
 const SELECTED_TIMEOUT = 1000;
 
 interface LinkPreviewType {
@@ -92,6 +102,9 @@ export type PropsData = {
 
   expirationLength?: number;
   expirationTimestamp?: number;
+
+  reactions?: ReactionViewerProps['reactions'];
+  selectedReaction?: string;
 };
 
 type PropsHousekeeping = {
@@ -104,36 +117,38 @@ type PropsHousekeeping = {
 export type PropsActions = {
   clearSelectedMessage: () => unknown;
 
+  reactToMessage: (
+    id: string,
+    { emoji, remove }: { emoji: string; remove: boolean }
+  ) => void;
   replyToMessage: (id: string) => void;
   retrySend: (id: string) => void;
   deleteMessage: (id: string) => void;
   showMessageDetail: (id: string) => void;
 
   openConversation: (conversationId: string, messageId?: string) => void;
-  showContactDetail: (
-    options: { contact: ContactType; signalAccount?: string }
-  ) => void;
+  showContactDetail: (options: {
+    contact: ContactType;
+    signalAccount?: string;
+  }) => void;
 
-  showVisualAttachment: (
-    options: { attachment: AttachmentType; messageId: string }
-  ) => void;
-  downloadAttachment: (
-    options: {
-      attachment: AttachmentType;
-      timestamp: number;
-      isDangerous: boolean;
-    }
-  ) => void;
+  showVisualAttachment: (options: {
+    attachment: AttachmentType;
+    messageId: string;
+  }) => void;
+  downloadAttachment: (options: {
+    attachment: AttachmentType;
+    timestamp: number;
+    isDangerous: boolean;
+  }) => void;
   displayTapToViewMessage: (messageId: string) => unknown;
 
   openLink: (url: string) => void;
-  scrollToQuotedMessage: (
-    options: {
-      author: string;
-      sentAt: number;
-    }
-  ) => void;
+  scrollToQuotedMessage: (options: { author: string; sentAt: number }) => void;
   selectMessage?: (messageId: string, conversationId: string) => unknown;
+
+  showExpiredIncomingTapToViewToast: () => unknown;
+  showExpiredOutgoingTapToViewToast: () => unknown;
 };
 
 export type Props = PropsData & PropsHousekeeping & PropsActions;
@@ -145,6 +160,14 @@ interface State {
 
   isSelected: boolean;
   prevSelectedCounter: number;
+
+  pickedReaction?: string;
+  reactionViewerRoot: HTMLDivElement | null;
+  reactionPickerRoot: HTMLDivElement | null;
+
+  isWide: boolean;
+
+  containerWidth: number;
 }
 
 const EXPIRATION_CHECK_MINIMUM = 2000;
@@ -152,8 +175,13 @@ const EXPIRED_DELAY = 600;
 
 export class Message extends React.PureComponent<Props, State> {
   public menuTriggerRef: Trigger | undefined;
-  public focusRef: React.RefObject<HTMLDivElement> = React.createRef();
   public audioRef: React.RefObject<HTMLAudioElement> = React.createRef();
+  public focusRef: React.RefObject<HTMLDivElement> = React.createRef();
+  public reactionsContainerRef: React.RefObject<
+    HTMLDivElement
+  > = React.createRef();
+
+  public wideMl: MediaQueryList;
 
   public expirationCheckInterval: any;
   public expiredTimeout: any;
@@ -162,6 +190,9 @@ export class Message extends React.PureComponent<Props, State> {
   public constructor(props: Props) {
     super(props);
 
+    this.wideMl = window.matchMedia('(min-width: 926px)');
+    this.wideMl.addEventListener('change', this.handleWideMlChange);
+
     this.state = {
       expiring: false,
       expired: false,
@@ -169,6 +200,13 @@ export class Message extends React.PureComponent<Props, State> {
 
       isSelected: props.isSelected,
       prevSelectedCounter: props.isSelectedCounter,
+
+      reactionViewerRoot: null,
+      reactionPickerRoot: null,
+
+      isWide: this.wideMl.matches,
+
+      containerWidth: 0,
     };
   }
 
@@ -194,6 +232,10 @@ export class Message extends React.PureComponent<Props, State> {
 
     return state;
   }
+
+  public handleWideMlChange = (event: MediaQueryListEvent) => {
+    this.setState({ isWide: event.matches });
+  };
 
   public captureMenuTrigger = (triggerRef: Trigger) => {
     this.menuTriggerRef = triggerRef;
@@ -273,6 +315,10 @@ export class Message extends React.PureComponent<Props, State> {
     if (this.expiredTimeout) {
       clearTimeout(this.expiredTimeout);
     }
+    this.toggleReactionViewer(true);
+    this.toggleReactionPicker(true);
+
+    this.wideMl.removeEventListener('change', this.handleWideMlChange);
   }
 
   public componentDidUpdate(prevProps: Props) {
@@ -327,6 +373,7 @@ export class Message extends React.PureComponent<Props, State> {
     }
   }
 
+  // tslint:disable-next-line cyclomatic-complexity
   public renderMetadata() {
     const {
       collapseMetadata,
@@ -336,6 +383,7 @@ export class Message extends React.PureComponent<Props, State> {
       i18n,
       isSticker,
       isTapToViewExpired,
+      reactions,
       status,
       text,
       textPending,
@@ -348,6 +396,7 @@ export class Message extends React.PureComponent<Props, State> {
 
     const isShowingImage = this.isShowingImage();
     const withImageNoCaption = Boolean(!isSticker && !text && isShowingImage);
+    const withReactions = reactions && reactions.length > 0;
     const showError = status === 'error' && direction === 'outgoing';
     const metadataDirection = isSticker ? undefined : direction;
 
@@ -355,12 +404,13 @@ export class Message extends React.PureComponent<Props, State> {
       <div
         className={classNames(
           'module-message__metadata',
+          `module-message__metadata--${direction}`,
+          withReactions ? 'module-message__metadata--with-reactions' : null,
           withImageNoCaption
             ? 'module-message__metadata--with-image-no-caption'
             : null
         )}
       >
-        <span className="module-message__metadata__spacer" />
         {showError ? (
           <span
             className={classNames(
@@ -935,6 +985,7 @@ export class Message extends React.PureComponent<Props, State> {
   public renderMenu(isCorrectSide: boolean, triggerId: string) {
     const {
       attachments,
+      // tslint:disable-next-line max-func-body-length
       direction,
       disableMenu,
       id,
@@ -946,6 +997,8 @@ export class Message extends React.PureComponent<Props, State> {
     if (!isCorrectSide || disableMenu) {
       return null;
     }
+
+    const { reactionPickerRoot, isWide } = this.state;
 
     const multipleAttachments = attachments && attachments.length > 1;
     const firstAttachment = attachments && attachments[0];
@@ -967,6 +1020,30 @@ export class Message extends React.PureComponent<Props, State> {
         />
       ) : null;
 
+    const reactButton = (
+      <Reference>
+        {({ ref: popperRef }) => {
+          // Only attach the popper reference to the reaction button if it is
+          // visible in the page (it is hidden when the page is narrow)
+          const maybePopperRef = isWide ? popperRef : undefined;
+
+          return (
+            <div
+              ref={maybePopperRef}
+              onClick={(event: React.MouseEvent) => {
+                event.stopPropagation();
+                event.preventDefault();
+
+                this.toggleReactionPicker();
+              }}
+              role="button"
+              className="module-message__buttons__react"
+            />
+          );
+        }}
+      </Reference>
+    );
+
     const replyButton = (
       <div
         onClick={(event: React.MouseEvent) => {
@@ -985,36 +1062,73 @@ export class Message extends React.PureComponent<Props, State> {
     );
 
     const menuButton = (
-      <ContextMenuTrigger id={triggerId} ref={this.captureMenuTrigger as any}>
-        <div
-          // This a menu meant for mouse use only
-          role="button"
-          onClick={this.showMenu}
-          className={classNames(
-            'module-message__buttons__menu',
-            `module-message__buttons__download--${direction}`
-          )}
-        />
-      </ContextMenuTrigger>
+      <Reference>
+        {({ ref: popperRef }) => {
+          // Only attach the popper reference to the collapsed menu button if
+          // the reaction button is not visible in the page (it is hidden when
+          // the page is narrow)
+          const maybePopperRef = !isWide ? popperRef : undefined;
+
+          return (
+            <ContextMenuTrigger
+              id={triggerId}
+              ref={this.captureMenuTrigger as any}
+            >
+              <div
+                // This a menu meant for mouse use only
+                ref={maybePopperRef}
+                role="button"
+                onClick={this.showMenu}
+                className={classNames(
+                  'module-message__buttons__menu',
+                  `module-message__buttons__download--${direction}`
+                )}
+              />
+            </ContextMenuTrigger>
+          );
+        }}
+      </Reference>
     );
 
-    const first = direction === 'incoming' ? downloadButton : menuButton;
-    const last = direction === 'incoming' ? menuButton : downloadButton;
-
     return (
-      <div
-        className={classNames(
-          'module-message__buttons',
-          `module-message__buttons--${direction}`
-        )}
-      >
-        {first}
-        {replyButton}
-        {last}
-      </div>
+      <Manager>
+        <div
+          className={classNames(
+            'module-message__buttons',
+            `module-message__buttons--${direction}`
+          )}
+        >
+          {reactButton}
+          {downloadButton}
+          {replyButton}
+          {menuButton}
+        </div>
+        {reactionPickerRoot &&
+          createPortal(
+            <Popper placement="top">
+              {({ ref, style }) => (
+                <ReactionPicker
+                  ref={ref}
+                  style={style}
+                  selected={this.props.selectedReaction}
+                  onClose={this.toggleReactionPicker}
+                  onPick={emoji => {
+                    this.toggleReactionPicker(true);
+                    this.props.reactToMessage(id, {
+                      emoji,
+                      remove: emoji === this.props.selectedReaction,
+                    });
+                  }}
+                />
+              )}
+            </Popper>,
+            reactionPickerRoot
+          )}
+      </Manager>
     );
   }
 
+  // tslint:disable-next-line max-func-body-length
   public renderContextMenu(triggerId: string) {
     const {
       attachments,
@@ -1049,6 +1163,19 @@ export class Message extends React.PureComponent<Props, State> {
             {i18n('downloadAttachment')}
           </MenuItem>
         ) : null}
+        <MenuItem
+          attributes={{
+            className: 'module-message__context__react',
+          }}
+          onClick={(event: React.MouseEvent) => {
+            event.stopPropagation();
+            event.preventDefault();
+
+            this.toggleReactionPicker();
+          }}
+        >
+          {i18n('reactToMessage')}
+        </MenuItem>
         <MenuItem
           attributes={{
             className: 'module-message__context__reply',
@@ -1241,8 +1368,8 @@ export class Message extends React.PureComponent<Props, State> {
     return isTapToViewError
       ? i18n('incomingError')
       : direction === 'outgoing'
-        ? outgoingString
-        : incomingString;
+      ? outgoingString
+      : incomingString;
   }
 
   public renderTapToView() {
@@ -1291,6 +1418,261 @@ export class Message extends React.PureComponent<Props, State> {
     );
   }
 
+  public toggleReactionViewer = (
+    onlyRemove = false,
+    pickedReaction?: string
+  ) => {
+    this.setState(({ reactionViewerRoot }) => {
+      if (reactionViewerRoot) {
+        document.body.removeChild(reactionViewerRoot);
+        document.body.removeEventListener(
+          'click',
+          this.handleClickOutsideReactionViewer,
+          true
+        );
+
+        return { reactionViewerRoot: null, pickedReaction };
+      }
+
+      if (!onlyRemove) {
+        const root = document.createElement('div');
+        document.body.appendChild(root);
+        document.body.addEventListener(
+          'click',
+          this.handleClickOutsideReactionViewer,
+          true
+        );
+
+        return {
+          reactionViewerRoot: root,
+          pickedReaction,
+        };
+      }
+
+      return { reactionViewerRoot: null, pickedReaction };
+    });
+  };
+
+  public toggleReactionPicker = (onlyRemove = false) => {
+    this.setState(({ reactionPickerRoot }) => {
+      if (reactionPickerRoot) {
+        document.body.removeChild(reactionPickerRoot);
+        document.body.removeEventListener(
+          'click',
+          this.handleClickOutsideReactionPicker,
+          true
+        );
+
+        return { reactionPickerRoot: null };
+      }
+
+      if (!onlyRemove) {
+        const root = document.createElement('div');
+        document.body.appendChild(root);
+        document.body.addEventListener(
+          'click',
+          this.handleClickOutsideReactionPicker,
+          true
+        );
+
+        return {
+          reactionPickerRoot: root,
+        };
+      }
+
+      return { reactionPickerRoot: null };
+    });
+  };
+
+  public handleClickOutsideReactionViewer = (e: MouseEvent) => {
+    const { reactionViewerRoot } = this.state;
+    const { current: reactionsContainer } = this.reactionsContainerRef;
+    if (reactionViewerRoot && reactionsContainer) {
+      if (
+        !reactionViewerRoot.contains(e.target as HTMLElement) &&
+        !reactionsContainer.contains(e.target as HTMLElement)
+      ) {
+        this.toggleReactionViewer(true);
+      }
+    }
+  };
+
+  public handleClickOutsideReactionPicker = (e: MouseEvent) => {
+    const { reactionPickerRoot } = this.state;
+    if (reactionPickerRoot) {
+      if (!reactionPickerRoot.contains(e.target as HTMLElement)) {
+        this.toggleReactionPicker(true);
+      }
+    }
+  };
+
+  // tslint:disable-next-line max-func-body-length
+  public renderReactions(outgoing: boolean) {
+    const { reactions, i18n } = this.props;
+
+    if (!reactions || (reactions && reactions.length === 0)) {
+      return null;
+    }
+
+    // Group by emoji and order each group by timestamp descending
+    const grouped = Object.values(groupBy(reactions, 'emoji')).map(res =>
+      orderBy(res, ['timestamp'], ['desc'])
+    );
+    // Order groups by length and subsequently by most recent reaction
+    const ordered = orderBy(
+      grouped,
+      ['length', ([{ timestamp }]) => timestamp],
+      ['desc', 'desc']
+    );
+    // Take the first three groups for rendering
+    const toRender = take(ordered, 3).map(res => ({
+      emoji: res[0].emoji,
+      count: res.length,
+      isMe: res.some(re => Boolean(re.from.isMe)),
+    }));
+    const someNotRendered = ordered.length > 3;
+    // We only drop two here because the third emoji would be replaced by the
+    // more button
+    const maybeNotRendered = drop(ordered, 2);
+    const maybeNotRenderedTotal = maybeNotRendered.reduce(
+      (sum, res) => sum + res.length,
+      0
+    );
+    const notRenderedIsMe =
+      someNotRendered &&
+      maybeNotRendered.some(res => res.some(re => Boolean(re.from.isMe)));
+
+    const { reactionViewerRoot, containerWidth, pickedReaction } = this.state;
+
+    // Calculate the width of the reactions container
+    const reactionsWidth = toRender.reduce((sum, res, i, arr) => {
+      if (someNotRendered && i === arr.length - 1) {
+        return sum + 28;
+      }
+
+      if (res.count > 1) {
+        return sum + 40;
+      }
+
+      return sum + 28;
+    }, 0);
+
+    const reactionsXAxisOffset = Math.max(
+      containerWidth - reactionsWidth - 6,
+      6
+    );
+
+    const popperPlacement = outgoing ? 'bottom-end' : 'bottom-start';
+
+    return (
+      <Manager>
+        <Reference>
+          {({ ref: popperRef }) => (
+            <div
+              ref={mergeRefs(this.reactionsContainerRef, popperRef)}
+              className={classNames(
+                'module-message__reactions',
+                outgoing
+                  ? 'module-message__reactions--outgoing'
+                  : 'module-message__reactions--incoming'
+              )}
+              style={{
+                [outgoing ? 'right' : 'left']: `${reactionsXAxisOffset}px`,
+              }}
+            >
+              {toRender.map((re, i) => {
+                const isLast = i === toRender.length - 1;
+                const isMore = isLast && someNotRendered;
+                const isMoreWithMe = isMore && notRenderedIsMe;
+
+                return (
+                  <button
+                    key={`${re.emoji}-${i}`}
+                    className={classNames(
+                      'module-message__reactions__reaction',
+                      re.count > 1
+                        ? 'module-message__reactions__reaction--with-count'
+                        : null,
+                      outgoing
+                        ? 'module-message__reactions__reaction--outgoing'
+                        : 'module-message__reactions__reaction--incoming',
+                      isMoreWithMe || (re.isMe && !isMoreWithMe)
+                        ? 'module-message__reactions__reaction--is-me'
+                        : null
+                    )}
+                    onClick={e => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      this.toggleReactionViewer(
+                        false,
+                        isMore ? 'all' : re.emoji
+                      );
+                    }}
+                    onKeyDown={e => {
+                      // Prevent enter key from opening stickers/attachments
+                      if (e.key === 'Enter') {
+                        e.stopPropagation();
+                      }
+                    }}
+                  >
+                    {isMore ? (
+                      <span
+                        className={classNames(
+                          'module-message__reactions__reaction__count',
+                          'module-message__reactions__reaction__count--no-emoji',
+                          isMoreWithMe
+                            ? 'module-message__reactions__reaction__count--is-me'
+                            : null
+                        )}
+                      >
+                        +{maybeNotRenderedTotal}
+                      </span>
+                    ) : (
+                      <React.Fragment>
+                        <Emoji size={16} emoji={re.emoji} />
+                        {re.count > 1 ? (
+                          <span
+                            className={classNames(
+                              'module-message__reactions__reaction__count',
+                              re.isMe
+                                ? 'module-message__reactions__reaction__count--is-me'
+                                : null
+                            )}
+                          >
+                            {re.count}
+                          </span>
+                        ) : null}
+                      </React.Fragment>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </Reference>
+        {reactionViewerRoot &&
+          createPortal(
+            <Popper placement={popperPlacement}>
+              {({ ref, style }) => (
+                <ReactionViewer
+                  ref={ref}
+                  style={{
+                    ...style,
+                    zIndex: 2,
+                  }}
+                  reactions={reactions}
+                  pickedReaction={pickedReaction}
+                  i18n={i18n}
+                  onClose={this.toggleReactionViewer}
+                />
+              )}
+            </Popper>,
+            reactionViewerRoot
+          )}
+      </Manager>
+    );
+  }
+
   public renderContents() {
     const { isTapToView } = this.props;
 
@@ -1316,7 +1698,7 @@ export class Message extends React.PureComponent<Props, State> {
     );
   }
 
-  // tslint:disable-next-line cyclomatic-complexity
+  // tslint:disable-next-line cyclomatic-complexity max-func-body-length
   public handleOpen = (
     event: React.KeyboardEvent<HTMLDivElement> | React.MouseEvent
   ) => {
@@ -1324,19 +1706,32 @@ export class Message extends React.PureComponent<Props, State> {
       attachments,
       contact,
       displayTapToViewMessage,
+      direction,
       id,
       isTapToView,
       isTapToViewExpired,
       openConversation,
       showContactDetail,
       showVisualAttachment,
+      showExpiredIncomingTapToViewToast,
+      showExpiredOutgoingTapToViewToast,
     } = this.props;
     const { imageBroken } = this.state;
 
     const isAttachmentPending = this.isAttachmentPending();
 
     if (isTapToView) {
-      if (!isTapToViewExpired && !isAttachmentPending) {
+      if (isAttachmentPending) {
+        return;
+      }
+
+      if (isTapToViewExpired) {
+        const action =
+          direction === 'outgoing'
+            ? showExpiredOutgoingTapToViewToast
+            : showExpiredIncomingTapToViewToast;
+        action();
+      } else {
         event.preventDefault();
         event.stopPropagation();
 
@@ -1436,6 +1831,14 @@ export class Message extends React.PureComponent<Props, State> {
   };
 
   public handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (
+      (event.key === 'E' || event.key === 'e') &&
+      (event.metaKey || event.ctrlKey) &&
+      event.shiftKey
+    ) {
+      this.toggleReactionPicker();
+    }
+
     if (event.key !== 'Enter' && event.key !== 'Space') {
       return;
     }
@@ -1461,6 +1864,7 @@ export class Message extends React.PureComponent<Props, State> {
       isTapToView,
       isTapToViewExpired,
       isTapToViewError,
+      reactions,
     } = this.props;
     const { isSelected } = this.state;
 
@@ -1489,6 +1893,9 @@ export class Message extends React.PureComponent<Props, State> {
         : null,
       isTapToViewError
         ? 'module-message__container--with-tap-to-view-error'
+        : null,
+      reactions && reactions.length > 0
+        ? 'module-message__container--with-reactions'
         : null
     );
     const containerStyles = {
@@ -1496,11 +1903,24 @@ export class Message extends React.PureComponent<Props, State> {
     };
 
     return (
-      <div className={containerClassnames} style={containerStyles}>
-        {this.renderAuthor()}
-        {this.renderContents()}
-        {this.renderAvatar()}
-      </div>
+      <Measure
+        bounds={true}
+        onResize={({ bounds = { width: 0 } }) => {
+          this.setState({ containerWidth: bounds.width });
+        }}
+      >
+        {({ measureRef }) => (
+          <div
+            ref={measureRef}
+            className={containerClassnames}
+            style={containerStyles}
+          >
+            {this.renderAuthor()}
+            {this.renderContents()}
+            {this.renderAvatar()}
+          </div>
+        )}
+      </Measure>
     );
   }
 
@@ -1553,6 +1973,7 @@ export class Message extends React.PureComponent<Props, State> {
         {this.renderError(direction === 'outgoing')}
         {this.renderMenu(direction === 'incoming', triggerId)}
         {this.renderContextMenu(triggerId)}
+        {this.renderReactions(direction === 'outgoing')}
       </div>
     );
   }

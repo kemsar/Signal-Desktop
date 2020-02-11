@@ -15,6 +15,12 @@ import { AttachmentType } from '../../types/Attachment';
 
 // State
 
+export type DBConversationType = {
+  id: string;
+  activeAt?: number;
+  lastMessage: string;
+  type: string;
+};
 export type ConversationType = {
   id: string;
   name?: string;
@@ -61,6 +67,20 @@ export type MessageType = {
       pending: boolean;
     };
   };
+  unread: boolean;
+  reactions?: Array<{
+    emoji: string;
+    timestamp: number;
+    from: {
+      id: string;
+      color?: string;
+      avatarPath?: string;
+      name?: string;
+      profileName?: string;
+      isMe?: boolean;
+      phoneNumber?: string;
+    };
+  }>;
 
   // No need to go beyond this; unused at this stage, since this goes into
   //   a reducer still in plain JavaScript and comes out well-formed
@@ -573,6 +593,14 @@ function hasMessageHeightChanged(
     return true;
   }
 
+  const currentReactions = message.reactions || [];
+  const lastReactions = previous.reactions || [];
+  const reactionsChanged =
+    (currentReactions.length === 0) !== (lastReactions.length === 0);
+  if (reactionsChanged) {
+    return true;
+  }
+
   return false;
 }
 
@@ -736,6 +764,21 @@ export function reducer(
 
     const lookup = fromPairs(messages.map(message => [message.id, message]));
 
+    let { newest, oldest } = metrics;
+
+    // If our metrics are a little out of date, we'll fix them up
+    if (messages.length > 0) {
+      const first = messages[0];
+      if (first && (!oldest || first.received_at <= oldest.received_at)) {
+        oldest = pick(first, ['id', 'received_at']);
+      }
+
+      const last = messages[messages.length - 1];
+      if (last && (!newest || last.received_at >= newest.received_at)) {
+        newest = pick(last, ['id', 'received_at']);
+      }
+    }
+
     return {
       ...state,
       selectedMessage: scrollToMessageId,
@@ -753,7 +796,11 @@ export function reducer(
             ? existingConversation.scrollToMessageCounter + 1
             : 0,
           messageIds,
-          metrics,
+          metrics: {
+            ...metrics,
+            newest,
+            oldest,
+          },
           resetCounter,
           heightChangeMessageIds: [],
         },
@@ -967,10 +1014,11 @@ export function reducer(
       }
     }
 
-    if (first && oldest && first.received_at < oldest.received_at) {
+    // Update oldest and newest if we receive older/newer messages (or duplicated timestamps!)
+    if (first && oldest && first.received_at <= oldest.received_at) {
       oldest = pick(first, ['id', 'received_at']);
     }
-    if (last && newest && last.received_at > newest.received_at) {
+    if (last && newest && last.received_at >= newest.received_at) {
       newest = pick(last, ['id', 'received_at']);
     }
 

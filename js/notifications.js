@@ -101,7 +101,19 @@
           // eslint-disable-next-line prefer-destructuring
           iconUrl = last.iconUrl;
           if (numNotifications === 1) {
-            message = `${i18n('notificationFrom')} ${lastMessageTitle}`;
+            if (last.reaction) {
+              message = i18n('notificationReaction', [
+                lastMessageTitle,
+                last.reaction.emoji,
+              ]);
+            } else {
+              message = `${i18n('notificationFrom')} ${lastMessageTitle}`;
+            }
+          } else if (last.reaction) {
+            message = i18n('notificationReactionMostRecent', [
+              lastMessageTitle,
+              last.reaction.emoji,
+            ]);
           } else {
             message = `${i18n(
               'notificationMostRecentFrom'
@@ -113,8 +125,23 @@
           if (numNotifications === 1) {
             // eslint-disable-next-line prefer-destructuring
             title = last.title;
-            // eslint-disable-next-line prefer-destructuring
-            message = last.message;
+            if (last.reaction) {
+              message = i18n('notificationReactionMessage', [
+                last.title,
+                last.reaction.emoji,
+                last.message,
+              ]);
+            } else {
+              // eslint-disable-next-line prefer-destructuring
+              message = last.message;
+            }
+          } else if (last.reaction) {
+            title = newMessageCountLabel;
+            message = i18n('notificationReactionMessageMostRecent', [
+              last.title,
+              last.reaction.emoji,
+              last.message,
+            ]);
           } else {
             title = newMessageCountLabel;
             message = `${i18n('notificationMostRecent')} ${last.message}`;

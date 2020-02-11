@@ -207,7 +207,7 @@ OutgoingMessage.prototype = {
     }
 
     return promise.catch(e => {
-      if (e.name === 'HTTPError' && (e.code !== 409 && e.code !== 410)) {
+      if (e.name === 'HTTPError' && e.code !== 409 && e.code !== 410) {
         // 409 and 410 should bubble and be handled by doSendMessage
         // 404 should throw UnregisteredUserError
         // all other network errors can be retried later.
@@ -257,10 +257,8 @@ OutgoingMessage.prototype = {
     const { accessKey } = info || {};
 
     if (accessKey && !senderCertificate) {
-      return Promise.reject(
-        new Error(
-          'OutgoingMessage.doSendMessage: accessKey was provided, but senderCertificate was not'
-        )
+      window.log.warn(
+        'OutgoingMessage.doSendMessage: accessKey was provided, but senderCertificate was not'
       );
     }
 
@@ -413,11 +411,35 @@ OutgoingMessage.prototype = {
             number,
             deviceIds
           );
-          throw error;
-        } else {
-          this.registerError(number, 'Failed to create or send message', error);
+
+          const address = new libsignal.SignalProtocolAddress(number, 1);
+          const identifier = address.toString();
+          window.log.info('closing all sessions for', number);
+
+          const sessionCipher = new libsignal.SessionCipher(
+            textsecure.storage.protocol,
+            address
+          );
+          window.log.info('closing session for', address.toString());
+          return Promise.all([
+            // Primary device
+            sessionCipher.closeOpenSessionForDevice(),
+            // The rest of their devices
+            textsecure.storage.protocol.archiveSiblingSessions(identifier),
+          ]).then(
+            () => {
+              throw error;
+            },
+            innerError => {
+              window.log.error(
+                `doSendMessage: Error closing sessions: ${innerError.stack}`
+              );
+              throw error;
+            }
+          );
         }
 
+        this.registerError(number, 'Failed to create or send message', error);
         return null;
       });
   },

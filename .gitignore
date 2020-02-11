@@ -35,3 +35,9 @@ package-lock\.json
 \.idea/
 
 package.json.bak
+
+# CSS Modules
+**/*.scss.d.ts
+
+# Sticker Creator
+sticker-creator/dist/*

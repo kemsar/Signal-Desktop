@@ -157,7 +157,7 @@ export async function showUpdateDialog(
     message: messages.autoUpdateNewVersionMessage.message,
     detail: messages.autoUpdateNewVersionInstructions.message,
     defaultId: LATER_BUTTON,
-    cancelId: RESTART_BUTTON,
+    cancelId: LATER_BUTTON,
   };
 
   const { response } = await dialog.showMessageBox(mainWindow, options);
@@ -273,7 +273,7 @@ function getGotOptions(): GotOptions<null> {
     ca,
     headers: {
       'Cache-Control': 'no-cache',
-      'User-Agent': 'Signal Desktop (+https://signal.org/download)',
+      'User-Agent': `Signal Desktop ${packageJson.version}`,
     },
     useElectronNet: false,
   };

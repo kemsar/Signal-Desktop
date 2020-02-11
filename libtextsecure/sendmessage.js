@@ -32,6 +32,7 @@ function Message(options) {
   this.quote = options.quote;
   this.recipients = options.recipients;
   this.sticker = options.sticker;
+  this.reaction = options.reaction;
   this.timestamp = options.timestamp;
 
   if (!(this.recipients instanceof Array)) {
@@ -123,6 +124,9 @@ Message.prototype = {
         proto.sticker.data = this.sticker.attachmentPointer;
       }
     }
+    if (this.reaction) {
+      proto.reaction = this.reaction;
+    }
     if (Array.isArray(this.preview)) {
       proto.preview = this.preview.map(preview => {
         const item = new textsecure.protobuf.DataMessage.Preview();
@@ -209,9 +213,7 @@ MessageSender.prototype = {
     }
     if (data.byteLength !== size) {
       throw new Error(
-        `makeAttachmentPointer: Size ${size} did not match data.byteLength ${
-          data.byteLength
-        }`
+        `makeAttachmentPointer: Size ${size} did not match data.byteLength ${data.byteLength}`
       );
     }
 
@@ -929,6 +931,7 @@ MessageSender.prototype = {
     quote,
     preview,
     sticker,
+    reaction,
     timestamp,
     expireTimer,
     profileKey,
@@ -942,6 +945,7 @@ MessageSender.prototype = {
       quote,
       preview,
       sticker,
+      reaction,
       expireTimer,
       profileKey,
       flags,
@@ -969,6 +973,7 @@ MessageSender.prototype = {
     quote,
     preview,
     sticker,
+    reaction,
     timestamp,
     expireTimer,
     profileKey,
@@ -983,6 +988,7 @@ MessageSender.prototype = {
         quote,
         preview,
         sticker,
+        reaction,
         expireTimer,
         profileKey,
       },
@@ -1067,6 +1073,7 @@ MessageSender.prototype = {
     quote,
     preview,
     sticker,
+    reaction,
     timestamp,
     expireTimer,
     profileKey,
@@ -1082,6 +1089,7 @@ MessageSender.prototype = {
       quote,
       preview,
       sticker,
+      reaction,
       expireTimer,
       profileKey,
       group: {

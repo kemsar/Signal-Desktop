@@ -6,7 +6,7 @@ const { Agent } = require('https');
 const is = require('@sindresorhus/is');
 const { redactPackId } = require('./stickers');
 
-/* global Signal, Buffer, setTimeout, log, _, getGuid */
+/* global Signal, Buffer, setTimeout, log, _, getGuid, PQueue */
 
 /* eslint-disable more/no-then, no-bitwise, no-nested-ternary */
 
@@ -37,6 +37,7 @@ function _getString(thing) {
   return thing;
 }
 
+// prettier-ignore
 function _b64ToUint6(nChr) {
   return nChr > 64 && nChr < 91
     ? nChr - 65
@@ -209,7 +210,7 @@ function _promiseAjax(providedUrl, options) {
       method: options.type,
       body: options.data || null,
       headers: {
-        'User-Agent': 'Signal Desktop (+https://signal.org/download)',
+        'User-Agent': `Signal Desktop ${options.version}`,
         'X-Signal-Agent': 'OWD',
         ...options.headers,
       },
@@ -398,6 +399,7 @@ const URL_CALLS = {
   messages: 'v1/messages',
   profile: 'v1/profile',
   signed: 'v2/keys/signed',
+  getStickerPackUpload: 'v1/sticker/pack/form',
 };
 
 module.exports = {
@@ -411,6 +413,7 @@ function initialize({
   certificateAuthority,
   contentProxyUrl,
   proxyUrl,
+  version,
 }) {
   if (!is.string(url)) {
     throw new Error('WebAPI.initialize: Invalid server url');
@@ -423,6 +426,9 @@ function initialize({
   }
   if (!is.string(contentProxyUrl)) {
     throw new Error('WebAPI.initialize: Invalid contentProxyUrl');
+  }
+  if (!is.string(version)) {
+    throw new Error('WebAPI.initialize: Invalid version');
   }
 
   // Thanks to function-hoisting, we can put this return statement before all of the
@@ -457,6 +463,7 @@ function initialize({
       getStickerPackManifest,
       makeProxiedRequest,
       putAttachment,
+      putStickers,
       registerKeys,
       registerSupportForUnauthenticatedDelivery,
       removeSignalingKey,
@@ -486,6 +493,7 @@ function initialize({
         type: param.httpType,
         user: username,
         validateResponse: param.validateResponse,
+        version,
         unauthenticated: param.unauthenticated,
         accessKey: param.accessKey,
       }).catch(e => {
@@ -573,6 +581,7 @@ function initialize({
         responseType: 'arraybuffer',
         timeout: 0,
         type: 'GET',
+        version,
       });
     }
 
@@ -852,6 +861,7 @@ function initialize({
         responseType: 'arraybuffer',
         type: 'GET',
         redactUrl: redactStickerUrl,
+        version,
       });
     }
 
@@ -862,38 +872,14 @@ function initialize({
         responseType: 'arraybuffer',
         type: 'GET',
         redactUrl: redactStickerUrl,
+        version,
       });
     }
 
-    async function getAttachment(id) {
-      // This is going to the CDN, not the service, so we use _outerAjax
-      return _outerAjax(`${cdnUrl}/attachments/${id}`, {
-        certificateAuthority,
-        proxyUrl,
-        responseType: 'arraybuffer',
-        timeout: 0,
-        type: 'GET',
-      });
-    }
-
-    async function putAttachment(encryptedBin) {
-      const response = await _ajax({
-        call: 'attachmentId',
-        httpType: 'GET',
-        responseType: 'json',
-      });
-
-      const {
-        key,
-        credential,
-        acl,
-        algorithm,
-        date,
-        policy,
-        signature,
-        attachmentIdString,
-      } = response;
-
+    function makePutParams(
+      { key, credential, acl, algorithm, date, policy, signature },
+      encryptedBin
+    ) {
       // Note: when using the boundary string in the POST body, it needs to be prefixed by
       //   an extra --, and the final boundary string at the end gets a -- prefix and a --
       //   suffix.
@@ -932,18 +918,99 @@ function initialize({
         contentLength
       );
 
-      // This is going to the CDN, not the service, so we use _outerAjax
-      await _outerAjax(`${cdnUrl}/attachments/`, {
-        certificateAuthority,
-        contentType: `multipart/form-data; boundary=${boundaryString}`,
+      return {
         data,
-        proxyUrl,
-        timeout: 0,
-        type: 'POST',
+        contentType: `multipart/form-data; boundary=${boundaryString}`,
         headers: {
           'Content-Length': contentLength,
         },
+      };
+    }
+
+    async function putStickers(
+      encryptedManifest,
+      encryptedStickers,
+      onProgress
+    ) {
+      // Get manifest and sticker upload parameters
+      const { packId, manifest, stickers } = await _ajax({
+        call: 'getStickerPackUpload',
+        responseType: 'json',
+        type: 'GET',
+        urlParameters: `/${encryptedStickers.length}`,
+      });
+
+      // Upload manifest
+      const manifestParams = makePutParams(manifest, encryptedManifest);
+      // This is going to the CDN, not the service, so we use _outerAjax
+      await _outerAjax(`${cdnUrl}/`, {
+        ...manifestParams,
+        certificateAuthority,
+        proxyUrl,
+        timeout: 0,
+        type: 'POST',
         processData: false,
+        version,
+      });
+
+      // Upload stickers
+      const queue = new PQueue({ concurrency: 3 });
+      await Promise.all(
+        stickers.map(async (s, id) => {
+          const stickerParams = makePutParams(s, encryptedStickers[id]);
+          await queue.add(async () =>
+            _outerAjax(`${cdnUrl}/`, {
+              ...stickerParams,
+              certificateAuthority,
+              proxyUrl,
+              timeout: 0,
+              type: 'POST',
+              processData: false,
+              version,
+            })
+          );
+          if (onProgress) {
+            onProgress();
+          }
+        })
+      );
+
+      // Done!
+      return packId;
+    }
+
+    async function getAttachment(id) {
+      // This is going to the CDN, not the service, so we use _outerAjax
+      return _outerAjax(`${cdnUrl}/attachments/${id}`, {
+        certificateAuthority,
+        proxyUrl,
+        responseType: 'arraybuffer',
+        timeout: 0,
+        type: 'GET',
+        version,
+      });
+    }
+
+    async function putAttachment(encryptedBin) {
+      const response = await _ajax({
+        call: 'attachmentId',
+        httpType: 'GET',
+        responseType: 'json',
+      });
+
+      const { attachmentIdString } = response;
+
+      const params = makePutParams(response, encryptedBin);
+
+      // This is going to the CDN, not the service, so we use _outerAjax
+      await _outerAjax(`${cdnUrl}/attachments/`, {
+        ...params,
+        certificateAuthority,
+        proxyUrl,
+        timeout: 0,
+        type: 'POST',
+        processData: false,
+        version,
       });
 
       return attachmentIdString;
@@ -981,6 +1048,7 @@ function initialize({
         redirect: 'follow',
         redactUrl: () => '[REDACTED_URL]',
         headers,
+        version,
       });
 
       if (!returnArrayBuffer) {
@@ -1016,9 +1084,10 @@ function initialize({
         .replace('http://', 'ws://');
       const login = encodeURIComponent(username);
       const pass = encodeURIComponent(password);
+      const clientVersion = encodeURIComponent(version);
 
       return _createSocket(
-        `${fixedScheme}/v1/websocket/?login=${login}&password=${pass}&agent=OWD`,
+        `${fixedScheme}/v1/websocket/?login=${login}&password=${pass}&agent=OWD&version=${clientVersion}`,
         { certificateAuthority, proxyUrl }
       );
     }
@@ -1028,9 +1097,10 @@ function initialize({
       const fixedScheme = url
         .replace('https://', 'wss://')
         .replace('http://', 'ws://');
+      const clientVersion = encodeURIComponent(version);
 
       return _createSocket(
-        `${fixedScheme}/v1/websocket/provisioning/?agent=OWD`,
+        `${fixedScheme}/v1/websocket/provisioning/?agent=OWD&version=${clientVersion}`,
         { certificateAuthority, proxyUrl }
       );
     }

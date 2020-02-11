@@ -321,6 +321,7 @@
       this.debouncedUpdateLastMessage();
     },
 
+    // For outgoing messages, we can call this directly. We're already loaded.
     addSingleMessage(message) {
       const { id } = message;
       const existing = this.messageCollection.get(id);
@@ -340,6 +341,15 @@
       }
 
       return model;
+    },
+
+    // For incoming messages, they might arrive while we're in the middle of a bulk fetch
+    //   from the database. We'll wait until that is done to process this newly-arrived
+    //   message.
+    async addIncomingMessage(message) {
+      await this.inProgressFetch;
+
+      this.addSingleMessage(message);
     },
 
     format() {
@@ -908,10 +918,6 @@
     },
 
     async sendStickerMessage(packId, stickerId) {
-      if (!window.ENABLE_STICKER_SEND) {
-        return;
-      }
-
       const packData = window.Signal.Stickers.getStickerPack(packId);
       const stickerData = window.Signal.Stickers.getSticker(packId, stickerId);
       if (!stickerData || !packData) {
@@ -940,6 +946,134 @@
 
       this.sendMessage(null, [], null, [], sticker);
       window.reduxActions.stickers.useSticker(packId, stickerId);
+    },
+
+    /**
+     * Sends a reaction message
+     * @param {object} reaction - The reaction to send
+     * @param {string} reaction.emoji - The emoji to react with
+     * @param {boolean} [reaction.remove] - Set to `true` if we are removing a
+     *   reaction with the given emoji
+     * @param {object} target - The target of the reaction
+     * @param {string} target.targetAuthorE164 - The E164 address of the target
+     *   message's author
+     * @param {number} target.targetTimestamp - The sent_at timestamp of the
+     *   target message
+     */
+    async sendReactionMessage(reaction, target) {
+      const timestamp = Date.now();
+      const outgoingReaction = { ...reaction, ...target };
+      const reactionModel = Whisper.Reactions.add({
+        ...outgoingReaction,
+        fromId: this.ourNumber || textsecure.storage.user.getNumber(),
+        timestamp,
+        fromSync: true,
+      });
+      Whisper.Reactions.onReaction(reactionModel);
+
+      const destination = this.id;
+      const recipients = this.getRecipients();
+
+      let profileKey;
+      if (this.get('profileSharing')) {
+        profileKey = storage.get('profileKey');
+      }
+
+      return this.queueJob(async () => {
+        window.log.info(
+          'Sending reaction to conversation',
+          this.idForLogging(),
+          'with timestamp',
+          timestamp
+        );
+
+        // Here we move attachments to disk
+        const attributes = {
+          id: window.getGuid(),
+          type: 'outgoing',
+          conversationId: destination,
+          sent_at: timestamp,
+          received_at: timestamp,
+          recipients,
+          reaction: outgoingReaction,
+        };
+
+        if (this.isPrivate()) {
+          attributes.destination = destination;
+        }
+
+        // We are only creating this model so we can use its sync message
+        // sending functionality. It will not be saved to the datbase.
+        const message = new Whisper.Message(attributes);
+
+        // We're offline!
+        if (!textsecure.messaging) {
+          throw new Error('Cannot send reaction while offline!');
+        }
+
+        // Special-case the self-send case - we send only a sync message
+        if (this.isMe()) {
+          const dataMessage = await textsecure.messaging.getMessageProto(
+            destination,
+            null,
+            null,
+            null,
+            null,
+            null,
+            outgoingReaction,
+            timestamp,
+            null,
+            profileKey
+          );
+          return message.sendSyncMessageOnly(dataMessage);
+        }
+
+        const options = this.getSendOptions();
+        const groupNumbers = this.getRecipients();
+
+        const promise = (() => {
+          if (this.isPrivate()) {
+            return textsecure.messaging.sendMessageToNumber(
+              destination,
+              null,
+              null,
+              null,
+              null,
+              null,
+              outgoingReaction,
+              timestamp,
+              null,
+              profileKey,
+              options
+            );
+          }
+
+          return textsecure.messaging.sendMessageToGroup(
+            destination,
+            groupNumbers,
+            null,
+            null,
+            null,
+            null,
+            null,
+            outgoingReaction,
+            timestamp,
+            null,
+            profileKey,
+            options
+          );
+        })();
+
+        return message.send(this.wrapSend(promise));
+      }).catch(error => {
+        window.log.error('Error sending reaction', reaction, target, error);
+
+        const reverseReaction = reactionModel.clone();
+        reverseReaction.set('remove', !reverseReaction.get('remove'));
+        Whisper.Reactions.onReaction(reverseReaction);
+
+        throw error;
+      });
     },
 
     sendMessage(body, attachments, quote, preview, sticker) {
@@ -1045,6 +1179,7 @@
             quote,
             preview,
             sticker,
+            null,
             now,
             expireTimer,
             profileKey
@@ -1066,6 +1201,7 @@
                 quote,
                 preview,
                 sticker,
+                null,
                 now,
                 expireTimer,
                 profileKey,
@@ -1080,6 +1216,7 @@
                 quote,
                 preview,
                 sticker,
+                null,
                 now,
                 expireTimer,
                 profileKey,
@@ -1390,6 +1527,7 @@
           [],
           null,
           [],
+          null,
           null,
           message.get('sent_at'),
           expireTimer,
@@ -1777,16 +1915,19 @@
       const data = window.Signal.Crypto.base64ToArrayBuffer(encryptedName);
 
       // decrypt
-      const decrypted = await textsecure.crypto.decryptProfileName(
+      const { given, family } = await textsecure.crypto.decryptProfileName(
         data,
         keyBuffer
       );
 
       // encode
-      const profileName = window.Signal.Crypto.stringFromBytes(decrypted);
+      const profileName = window.Signal.Crypto.stringFromBytes(given);
+      const profileFamilyName = family
+        ? window.Signal.Crypto.stringFromBytes(family)
+        : null;
 
       // set
-      this.set({ profileName });
+      this.set({ profileName, profileFamilyName });
     },
     async setProfileAvatar(avatarPath) {
       if (!avatarPath) {
@@ -1830,6 +1971,7 @@
           profileKey,
           accessKey: null,
           profileName: null,
+          profileFamilyName: null,
           profileAvatar: null,
           sealedSender: SEALED_SENDER.UNKNOWN,
         });
@@ -1855,6 +1997,7 @@
           profileAvatar: null,
           profileKey: null,
           profileName: null,
+          profileFamilyName: null,
           accessKey: null,
           sealedSender: SEALED_SENDER.UNKNOWN,
         });
@@ -1941,7 +2084,10 @@
 
     getProfileName() {
       if (this.isPrivate()) {
-        return this.get('profileName');
+        return Util.combineNames(
+          this.get('profileName'),
+          this.get('profileFamilyName')
+        );
       }
       return null;
     },
@@ -2052,33 +2198,35 @@
       });
     },
 
-    notify(message) {
-      if (!message.isIncoming()) {
-        return Promise.resolve();
+    async notify(message, reaction) {
+      if (!message.isIncoming() && !reaction) {
+        return;
       }
+
       const conversationId = this.id;
 
-      return ConversationController.getOrCreateAndWait(
-        message.get('source'),
+      const sender = await ConversationController.getOrCreateAndWait(
+        reaction ? reaction.get('fromId') : message.get('source'),
         'private'
-      ).then(sender =>
-        sender.getNotificationIcon().then(iconUrl => {
-          const messageJSON = message.toJSON();
-          const messageSentAt = messageJSON.sent_at;
-          const messageId = message.id;
-          const isExpiringMessage = Message.hasExpiration(messageJSON);
-
-          Whisper.Notifications.add({
-            conversationId,
-            iconUrl,
-            isExpiringMessage,
-            message: message.getNotificationText(),
-            messageId,
-            messageSentAt,
-            title: sender.getTitle(),
-          });
-        })
       );
+
+      const iconUrl = await sender.getNotificationIcon();
+
+      const messageJSON = message.toJSON();
+      const messageSentAt = messageJSON.sent_at;
+      const messageId = message.id;
+      const isExpiringMessage = Message.hasExpiration(messageJSON);
+
+      Whisper.Notifications.add({
+        conversationId,
+        iconUrl,
+        isExpiringMessage,
+        message: message.getNotificationText(),
+        messageId,
+        messageSentAt,
+        title: sender.getTitle(),
+        reaction: reaction ? reaction.toJSON() : null,
+      });
     },
 
     notifyTyping(options = {}) {

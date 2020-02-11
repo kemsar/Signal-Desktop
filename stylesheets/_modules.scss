@@ -89,10 +89,11 @@
 }
 
 .module-message__buttons--incoming {
-  left: 100%;
+  left: calc(100% + 8px);
 }
 .module-message__buttons--outgoing {
-  right: 100%;
+  right: calc(100% + 8px);
+  flex-direction: row-reverse;
 }
 
 .module-message__buttons__download {
@@ -117,6 +118,37 @@
     &:hover {
       @include color-svg(
         '../images/icons/v2/save-solid-24.svg',
+        $color-gray-02
+      );
+    }
+  }
+}
+
+.module-message__buttons__react {
+  height: 24px;
+  width: 24px;
+  display: inline-block;
+  cursor: pointer;
+  @include light-theme {
+    @include color-svg(
+      '../images/icons/v2/add-emoji-outline-24.svg',
+      $color-gray-45
+    );
+    &:hover {
+      @include color-svg(
+        '../images/icons/v2/add-emoji-outline-24.svg',
+        $color-gray-90
+      );
+    }
+  }
+  @include dark-theme {
+    @include color-svg(
+      '../images/icons/v2/add-emoji-outline-24.svg',
+      $color-gray-45
+    );
+    &:hover {
+      @include color-svg(
+        '../images/icons/v2/add-emoji-outline-24.svg',
         $color-gray-02
       );
     }
@@ -255,7 +287,7 @@
 // This is the component we put the outline around when the whole message is selected
 .module-message--selected .module-message__container {
   @include mouse-mode {
-    animation: message--mouse-selected 1s cubic-bezier(0.19, 1, 0.22, 1);
+    animation: message--mouse-selected 1s $ease-out-expo;
   }
 }
 .module-message:focus .module-message__container {
@@ -366,15 +398,13 @@
 }
 
 .module-message__container--with-tap-to-view-expired {
-  cursor: default;
-
   @include light-theme {
     border: 1px solid $color-gray-15;
     background-color: $color-white;
   }
   @include dark-theme {
     border: 1px solid $color-gray-60;
-    background-color: $color-black;
+    background-color: $color-gray-95;
   }
   @include ios-theme {
     border: 1px solid $color-gray-15;
@@ -382,7 +412,7 @@
   }
   @include ios-dark-theme {
     border: 1px solid $color-gray-60;
-    background-color: $color-black;
+    background-color: $color-gray-95;
   }
 }
 
@@ -440,16 +470,16 @@
   height: 20px;
 
   @include light-theme {
-    @include color-svg('../images/icons/v2/play-solid-24.svg', $color-white);
+    @include color-svg('../images/icons/v2/view-once-24.svg', $color-white);
   }
   @include dark-theme {
-    @include color-svg('../images/icons/v2/play-solid-24.svg', $color-gray-05);
+    @include color-svg('../images/icons/v2/view-once-24.svg', $color-gray-05);
   }
   @include ios-theme {
-    @include color-svg('../images/icons/v2/play-solid-24.svg', $color-gray-90);
+    @include color-svg('../images/icons/v2/view-once-24.svg', $color-gray-90);
   }
   @include ios-dark-theme {
-    @include color-svg('../images/icons/v2/play-solid-24.svg', $color-gray-05);
+    @include color-svg('../images/icons/v2/view-once-24.svg', $color-gray-05);
   }
 }
 .module-message__tap-to-view__icon--outgoing {
@@ -465,28 +495,16 @@
 }
 .module-message__tap-to-view__icon--expired {
   @include light-theme {
-    @include color-svg(
-      '../images/icons/v2/play-outline-24.svg',
-      $color-gray-75
-    );
+    @include color-svg('../images/icons/v2/viewed-once-24.svg', $color-gray-75);
   }
   @include dark-theme {
-    @include color-svg(
-      '../images/icons/v2/play-outline-24.svg',
-      $color-gray-05
-    );
+    @include color-svg('../images/icons/v2/viewed-once-24.svg', $color-gray-05);
   }
   @include ios-theme {
-    @include color-svg(
-      '../images/icons/v2/play-outline-24.svg',
-      $color-gray-75
-    );
+    @include color-svg('../images/icons/v2/viewed-once-24.svg', $color-gray-75);
   }
   @include ios-dark-theme {
-    @include color-svg(
-      '../images/icons/v2/play-outline-24.svg',
-      $color-gray-05
-    );
+    @include color-svg('../images/icons/v2/viewed-once-24.svg', $color-gray-05);
   }
 }
 .module-message__tap-to-view__text {
@@ -1072,6 +1090,14 @@
   align-items: center;
   margin-top: 3px;
   margin-bottom: -3px;
+
+  &--outgoing {
+    justify-content: flex-end;
+  }
+
+  &--with-reactions {
+    margin-bottom: -2px;
+  }
 }
 
 // With an image and no caption, this section needs to be on top of the image overlay
@@ -1126,17 +1152,25 @@
     color: $color-white;
   }
 }
-.module-message__metadata__date--incoming-with-tap-to-view-expired {
+.module-message__metadata__date.module-message__metadata__date--incoming-with-tap-to-view-expired {
   color: $color-gray-75;
+
+  @include dark-theme {
+    color: $color-white-alpha-80;
+  }
 }
+.module-message__metadata__date.module-message__metadata__date--outgoing-with-tap-to-view-expired {
+  color: $color-gray-75;
+
+  @include dark-theme {
+    color: $color-white-alpha-80;
+  }
+}
+
 .module-message__metadata__date--with-sticker {
   @include ios-theme {
     color: $color-gray-60;
   }
-}
-
-.module-message__metadata__spacer {
-  flex-grow: 1;
 }
 
 .module-message__metadata__status-icon {
@@ -1157,7 +1191,7 @@
     @include color-svg('../images/sending.svg', $color-white-alpha-80);
   }
   @include ios-theme {
-    @include color-svg('../images/sending.svg', $color-gray-60);
+    @include color-svg('../images/sending.svg', $color-white);
   }
   @include ios-dark-theme {
     @include color-svg('../images/sending.svg', $color-white);
@@ -1304,6 +1338,96 @@
   align-items: center;
 }
 
+.module-message__reactions {
+  position: absolute;
+  bottom: 0px;
+  z-index: 2;
+  height: 22px;
+  display: flex;
+}
+
+.module-message__reactions__reaction {
+  @include button-reset;
+
+  min-width: 28px;
+  height: 22px;
+  border: 1px solid;
+  border-radius: 33px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  &--with-count {
+    min-width: 40px;
+  }
+
+  &__count {
+    @include font-caption-bold;
+
+    margin-left: 4px;
+
+    &--no-emoji {
+      margin-left: 0px;
+    }
+
+    @include light-theme {
+      color: $color-gray-60;
+    }
+
+    @include dark-theme {
+      color: $color-gray-25;
+    }
+
+    &--is-me {
+      @include light-theme {
+        color: $color-gray-75;
+      }
+
+      @include dark-theme {
+        color: $color-gray-15;
+      }
+
+      @include ios-theme {
+        color: $color-white-alpha-90;
+      }
+    }
+  }
+
+  &:focus {
+    outline: none;
+  }
+
+  @include keyboard-mode {
+    &:focus {
+      box-shadow: 0px 0px 0px 2px $color-signal-blue;
+    }
+  }
+
+  @include light-theme() {
+    border-color: $color-white;
+    background: $color-gray-05;
+  }
+
+  @include dark-theme() {
+    border-color: $color-gray-95;
+    background: $color-gray-75;
+  }
+
+  &--is-me {
+    @include light-theme() {
+      background: $color-gray-25;
+    }
+
+    @include dark-theme() {
+      background: $color-gray-45;
+    }
+
+    @include ios-theme() {
+      background: $color-accent-blue;
+    }
+  }
+}
+
 // Module: Expire Timer
 
 .module-expire-timer {
@@ -1366,8 +1490,19 @@ $timer-icons: '55', '50', '45', '40', '35', '30', '25', '20', '15', '10', '05',
     background-color: $color-gray-25;
   }
 }
-.module-expire-timer--incoming-with-tap-to-view-expired {
+.module-expire-timer.module-expire-timer--incoming-with-tap-to-view-expired {
   background-color: $color-gray-75;
+
+  @include dark-theme {
+    background-color: $color-white-alpha-80;
+  }
+}
+.module-expire-timer.module-expire-timer--outgoing-with-tap-to-view-expired {
+  background-color: $color-gray-75;
+
+  @include dark-theme {
+    background-color: $color-white-alpha-80;
+  }
 }
 .module-expire-timer--with-sticker {
   @include ios-theme {
@@ -3146,6 +3281,7 @@ $timer-icons: '55', '50', '45', '40', '35', '30', '25', '20', '15', '10', '05',
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+  text-align: left;
 
   @include light-theme {
     color: $color-gray-60;
@@ -3360,6 +3496,51 @@ $timer-icons: '55', '50', '45', '40', '35', '30', '25', '20', '15', '10', '05',
 .module-avatar__label--28 {
   font-size: 14px;
   line-height: 28px;
+}
+
+.module-avatar--32 {
+  height: 32px;
+  width: 32px;
+
+  img {
+    height: 32px;
+    width: 32px;
+  }
+}
+
+.module-avatar__icon--32.module-avatar__icon--group {
+  height: 20px;
+  width: 20px;
+  @include light-theme {
+    @include color-svg('../images/icons/v2/group-outline-20.svg', $color-white);
+  }
+  @include dark-theme {
+    @include color-svg(
+      '../images/icons/v2/group-outline-20.svg',
+      $color-gray-05
+    );
+  }
+}
+.module-avatar__icon--32.module-avatar__icon--direct {
+  height: 20px;
+  width: 20px;
+  @include light-theme {
+    @include color-svg(
+      '../images/icons/v2/profile-outline-20.svg',
+      $color-white
+    );
+  }
+  @include dark-theme {
+    @include color-svg(
+      '../images/icons/v2/profile-outline-20.svg',
+      $color-gray-05
+    );
+  }
+}
+
+.module-avatar__label--32 {
+  font-size: 14px;
+  line-height: 32px;
 }
 
 .module-avatar--52 {
@@ -3692,7 +3873,7 @@ $timer-icons: '55', '50', '45', '40', '35', '30', '25', '20', '15', '10', '05',
     right: 1px;
     border-radius: 10px;
 
-    animation: message--mouse-selected 1s cubic-bezier(0.19, 1, 0.22, 1);
+    animation: message--mouse-selected 1s $ease-out-expo;
   }
 }
 
@@ -4668,6 +4849,244 @@ button.module-image__border-overlay:focus {
   //     - https://medium.com/mofed/css-line-clamp-the-good-the-bad-and-the-straight-up-broken-865413f16e5
 }
 
+// Module: Reaction Viewer
+
+.module-reaction-viewer {
+  width: 320px;
+  height: 320px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+
+  @include popper-shadow();
+
+  @include light-theme() {
+    background: $color-white;
+  }
+
+  @include dark-theme() {
+    background: $color-gray-75;
+  }
+
+  &__header {
+    width: 100%;
+    min-height: 44px;
+    padding: 0px 8px;
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    overflow-x: auto;
+
+    &__button {
+      min-height: 28px;
+      border: none;
+      border-radius: 18px;
+      padding: 0px 8px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-basis: 45px;
+      flex-shrink: 0;
+
+      &:not(:first-of-type) {
+        margin-left: 4px;
+      }
+
+      &:focus {
+        outline: none;
+      }
+      @include keyboard-mode {
+        &:focus {
+          box-shadow: 0px 0px 0px 2px $color-signal-blue;
+        }
+      }
+
+      background: none;
+
+      &--selected {
+        @include light-theme() {
+          background: $color-gray-05;
+        }
+
+        @include dark-theme() {
+          background: $color-gray-60;
+        }
+      }
+
+      &__count,
+      &__all {
+        @include font-body-2-bold();
+
+        white-space: nowrap;
+
+        @include light-theme() {
+          color: $color-gray-90;
+        }
+
+        @include dark-theme() {
+          color: $color-gray-05;
+        }
+      }
+
+      &__count {
+        margin-left: 4px;
+      }
+    }
+  }
+
+  &__body {
+    flex-grow: 1;
+    padding: 0 16px;
+    overflow: auto;
+
+    &__row {
+      margin-top: 12px;
+      min-height: 32px;
+      display: flex;
+      flex-direction: row;
+      justify-content: flex-start;
+      align-items: center;
+
+      &:last-of-type {
+        margin-bottom: 12px;
+      }
+
+      &__avatar {
+        min-width: 32px;
+        flex-shrink: 1;
+      }
+
+      &__name {
+        @include font-body-1-bold();
+        flex-grow: 1;
+        margin-left: 8px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+
+        @include light-theme() {
+          color: $color-gray-90;
+        }
+
+        @include dark-theme() {
+          color: $color-gray-05;
+        }
+      }
+
+      &__emoji {
+        width: 18px;
+        flex-shrink: 1;
+      }
+    }
+  }
+}
+
+// Module: Reaction Picker
+
+@keyframes module-reaction-picker__background-fade {
+  from {
+    background: transparent;
+  }
+  to {
+    // This color is the same in both light and dark themes
+    background: rgba($color-black, 0.8);
+  }
+}
+
+@keyframes module-reaction-picker__emoji-fade {
+  from {
+    transform: translate3d(0, 24px, 0);
+    opacity: 0;
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+}
+
+.module-reaction-picker {
+  width: 320px;
+  height: 56px;
+  border-radius: 30px;
+  position: relative;
+  margin: 4px 0;
+  z-index: 2;
+
+  animation: {
+    name: module-reaction-picker__background-fade;
+    duration: 400ms;
+    timing-function: $ease-out-expo;
+    fill-mode: forwards;
+  }
+
+  &__emoji-btn {
+    @include button-reset;
+    display: flex;
+    min-width: 52px;
+    min-height: 52px;
+    border-radius: 52px;
+
+    position: absolute;
+    top: 2px;
+
+    @for $i from 0 through 6 {
+      &:nth-of-type(#{$i + 1}) {
+        left: 2px + ($i * 44px);
+
+        // Prevent animation jank
+        opacity: 0;
+
+        animation: {
+          name: module-reaction-picker__emoji-fade;
+          duration: 400ms;
+          timing-function: $ease-out-expo;
+          delay: #{$i * 10ms};
+          fill-mode: forwards;
+        }
+      }
+    }
+
+    transition: background 400ms $ease-out-expo;
+    &--selected {
+      // This color is the same in both light and dark themes
+      background: rgba($color-white, 0.3);
+    }
+
+    @include keyboard-mode {
+      &:focus:before {
+        content: '';
+        display: block;
+        width: 4px;
+        height: 4px;
+        background: $color-signal-blue;
+        border-radius: 2px;
+        position: absolute;
+        bottom: 4px;
+        left: calc(50% - 2px);
+      }
+    }
+
+    $emoji-btn: &;
+
+    &__emoji {
+      position: absolute;
+      left: 2px;
+      top: 2px;
+      transform-origin: center;
+      $scale: 32 / 48;
+      transform: scale3d($scale, $scale, $scale);
+      transition: transform 400ms $ease-out-expo;
+
+      #{$emoji-btn}:hover &,
+      .keyboard-mode #{$emoji-btn}:focus & {
+        transform: scale3d(1, 1, 1) translate3d(0, -24px, 0);
+        z-index: 1;
+      }
+    }
+  }
+}
+
 // Module: Left Pane
 
 .module-left-pane {
@@ -5139,10 +5558,9 @@ button.module-image__border-overlay:focus {
 }
 
 .module-sticker-picker__header__button__image {
-  min-width: 20px;
-  min-height: 20px;
-  max-width: 20px;
-  max-height: 20px;
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
 }
 
 .module-sticker-picker__header__button__image--placeholder {
@@ -5193,6 +5611,7 @@ button.module-image__border-overlay:focus {
     &__placeholder {
       width: 100%;
       height: 100%;
+      object-fit: contain;
     }
 
     &__placeholder {
@@ -5378,6 +5797,7 @@ button.module-image__border-overlay:focus {
   &__cover {
     width: 48px;
     height: 48px;
+    object-fit: contain;
   }
   &__cover-placeholder {
     width: 48px;
@@ -5577,10 +5997,14 @@ button.module-image__border-overlay:focus {
       &__cell {
         width: 96px;
         height: 96px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
 
         &__image {
           width: 100%;
           height: 100%;
+          object-fit: contain;
         }
 
         &--placeholder {
@@ -5618,13 +6042,15 @@ button.module-image__border-overlay:focus {
       }
 
       &__info {
-        flex-grow: 1;
+        width: 317px;
         display: flex;
         flex-direction: column;
         justify-content: center;
 
         &__title {
           margin: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
 
           @include font-body-1-bold;
 
@@ -5639,7 +6065,9 @@ button.module-image__border-overlay:focus {
 
         &__author {
           margin: 0;
-          height: 18px;
+          overflow: hidden;
+          white-space: nowrap;
+          text-overflow: ellipsis;
 
           @include light-theme {
             color: $color-gray-45;
@@ -5773,6 +6201,7 @@ button.module-image__border-overlay:focus {
   &__image {
     width: 20px;
     height: 20px;
+    object-fit: contain;
   }
   &__image-placeholder {
     width: 20px;
@@ -6204,6 +6633,7 @@ button.module-image__border-overlay:focus {
       padding: 0;
       justify-content: center;
       align-items: center;
+      @include font-body-1;
 
       @include light-theme {
         color: $color-gray-60;
@@ -6313,8 +6743,10 @@ button.module-image__border-overlay:focus {
   @include emoji-size(16px);
   @include emoji-size(18px);
   @include emoji-size(20px);
+  @include emoji-size(24px);
   @include emoji-size(28px);
   @include emoji-size(32px);
+  @include emoji-size(48px);
   @include emoji-size(64px);
   @include emoji-size(66px);
 }
@@ -7226,11 +7658,18 @@ button.module-image__border-overlay:focus {
 .module-message__buttons__reply {
   display: none;
 }
+.module-message__buttons__react {
+  display: none;
+}
 
 // To limit messages with things forcing them wider, like long attachment names
 .module-message__container {
   // 2px to allow for 1px border
   max-width: 302px;
+
+  &--with-reactions {
+    margin-bottom: 12px;
+  }
 }
 
 /* Spec: container > 438px and container < 593px */
@@ -7256,6 +7695,9 @@ button.module-image__border-overlay:focus {
     display: inline-block;
   }
   .module-message__buttons__reply {
+    display: inline-block;
+  }
+  .module-message__buttons__react {
     display: inline-block;
   }
 
@@ -7291,12 +7733,18 @@ button.module-image__border-overlay:focus {
   .module-message__buttons__reply {
     display: inline-block;
   }
+  .module-message__buttons__react {
+    display: inline-block;
+  }
 
   // To hide in larger breakpoints
   .module-message__context__download {
     display: none;
   }
   .module-message__context__reply {
+    display: none;
+  }
+  .module-message__context__react {
     display: none;
   }
 }

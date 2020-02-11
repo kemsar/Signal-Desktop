@@ -3,7 +3,7 @@ import React from 'react';
 import { Emojify } from './Emojify';
 
 interface Props {
-  phoneNumber: string;
+  phoneNumber?: string;
   name?: string;
   profileName?: string;
   module?: string;
