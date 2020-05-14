@@ -303,18 +303,15 @@
         "node_modules/sharp"
       ],
       "target": [
-        "deb"
+        "AppImage",
+        "rpm"
       ],
       "icon": "build/icons/png"
     },
-    "deb": {
+    "rpm": {
       "depends": [
-        "libnotify4",
-        "libappindicator1",
-        "libxtst6",
-        "libnss3",
-        "libasound2",
-        "libxss1"
+        "libnotify",
+        "libappindicator"
       ]
     },
     "protocols": {
@@ -351,6 +348,7 @@
       "loading_preload.js",
       "main.js",
       "images/**",
+      "notifications/**",
       "fonts/**",
       "build/assets",
       "node_modules/**",
@@ -375,7 +373,7 @@
       "node_modules/socks/build/client/*.js",
       "node_modules/smart-buffer/build/*.js",
       "node_modules/sharp/build/**",
-      "!node_modules/@journeyapps/sqlcipher/deps/*",
+      "node_modules/@mapbox/node-sqlite3/deps/*",
       "!node_modules/@journeyapps/sqlcipher/build/*",
       "!node_modules/@journeyapps/sqlcipher/lib/binding/node-*"
     ]
