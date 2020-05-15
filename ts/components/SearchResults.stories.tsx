@@ -412,7 +412,7 @@ const permutations = [
   },
 ];
 
-storiesOf('Components/SearchResults', module).add('Iterations', () => {
+storiesOf('Components/SearchResults', module).add('Iterations', (): any => {
   return permutations.map(({ props, title }) => (
     <>
       <h3>{title}</h3>

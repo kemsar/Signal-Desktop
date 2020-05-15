@@ -1133,7 +1133,7 @@
 .module-message__metadata--with-image-no-caption {
   position: absolute;
   bottom: 9px;
-  z-index: 2;
+  z-index: $z-index-module-message__metadata--with-image-no-caption;
 
   width: 100%;
   // Because this is absolutely positioned, we 100% is too big, take it down by parent
@@ -3938,7 +3938,7 @@ $timer-icons: '55', '50', '45', '40', '35', '30', '25', '20', '15', '10', '05',
   bottom: 0;
   left: 0;
   right: 0;
-  z-index: 2;
+  z-index: $z-index-module-image__border-overlay;
 }
 
 .module-image__border-overlay--with-click-handler {
@@ -4034,7 +4034,7 @@ button.module-image__border-overlay:focus {
   );
   position: absolute;
   bottom: 0;
-  z-index: 1;
+  z-index: $z-index--module-image__bottom-overlay-z-index;
   left: 0;
   right: 0;
 }
@@ -4071,7 +4071,7 @@ button.module-image__border-overlay:focus {
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 2;
+  z-index: $z-index--module-image__text-container;
 
   color: $color-white;
 
@@ -4088,7 +4088,7 @@ button.module-image__border-overlay:focus {
   right: 5px;
   width: 16px;
   height: 16px;
-  z-index: 2;
+  z-index: $z-index-module-image__close-button;
 
   background-image: url('../images/x-shadow-16.svg');
 
@@ -4247,7 +4247,7 @@ button.module-image__border-overlay:focus {
   width: 20px;
   height: 20px;
 
-  z-index: 2;
+  z-index: $z-index-module-attachments__close-button;
   @include color-svg('../images/icons/v2/x-24.svg', $color-black);
 
   @include keyboard-mode {
@@ -4298,7 +4298,7 @@ button.module-image__border-overlay:focus {
   right: 5px;
   width: 16px;
   height: 16px;
-  z-index: 2;
+  z-index: $z-index-module-staged-generic-attachment__close-button;
 
   @include light-theme {
     @include color-svg('../images/icons/v2/x-24.svg', $color-black);
@@ -4363,7 +4363,7 @@ button.module-image__border-overlay:focus {
 
 .module-caption-editor {
   background-color: $color-black;
-  z-index: 20;
+  z-index: $z-index--module-caption-editor;
 
   position: absolute;
   left: 0;
@@ -4377,7 +4377,7 @@ button.module-image__border-overlay:focus {
 }
 
 .module-caption-editor__close-button {
-  z-index: 21;
+  z-index: $z-index-module-caption-editor__close-button;
   cursor: pointer;
   position: absolute;
 
@@ -4385,7 +4385,7 @@ button.module-image__border-overlay:focus {
   right: 16px;
   width: 30px;
   height: 30px;
-  z-index: 2;
+  z-index: $z-index-module-caption-editor__close-button;
   @include color-svg('../images/icons/v2/x-24.svg', $color-white);
 }
 
@@ -4645,7 +4645,7 @@ button.module-image__border-overlay:focus {
   top: 0;
   left: 0;
 
-  z-index: 2;
+  z-index: $z-index-module-spinner__circle;
   height: 100%;
   width: 100%;
 
@@ -4656,7 +4656,7 @@ button.module-image__border-overlay:focus {
   top: 0;
   left: 0;
 
-  z-index: 3;
+  z-index: $z-index-module-spinner__arc;
   height: 100%;
   width: 100%;
 
@@ -5117,7 +5117,7 @@ button.module-image__border-overlay:focus {
   border-radius: 30px;
   position: relative;
   margin: 4px 0;
-  z-index: 2;
+  z-index: $z-index-module-reaction-picker;
 
   animation: {
     name: module-reaction-picker__background-fade;
@@ -5199,8 +5199,10 @@ button.module-image__border-overlay:focus {
   display: inline-flex;
   flex-direction: column;
 
-  width: $left-pane-width;
+  max-width: $left-pane-width;
   height: 100%;
+  float: left;
+  position: relative;
 }
 
 .module-left-pane__header {
@@ -5449,7 +5451,7 @@ button.module-image__border-overlay:focus {
   width: 332px;
   border-radius: 8px;
   margin-bottom: 6px;
-  z-index: 2;
+  z-index: $z-index-module-composition-popper;
   user-select: none;
   overflow: hidden;
 
@@ -5478,6 +5480,7 @@ button.module-image__border-overlay:focus {
   display: grid;
   grid-template-rows: 44px 1fr;
   grid-template-columns: 1fr;
+  z-index: $z-index-module-sticker-picker;
 }
 
 .module-sticker-picker__header {
@@ -6025,7 +6028,7 @@ button.module-image__border-overlay:focus {
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 5;
+    z-index: $z-index-module-sticker-manager-preview-modal;
   }
 
   &__container {
@@ -6275,7 +6278,7 @@ button.module-image__border-overlay:focus {
   padding: 7px 12px;
   border-radius: 8px;
   margin-bottom: 6px;
-  z-index: 1;
+  z-index: $z-index-module-sticker-button__tooltip;
 
   @include light-theme {
     background: $color-white;
@@ -6410,7 +6413,7 @@ button.module-image__border-overlay:focus {
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 5;
+    z-index: $z-index-module-confirmation-dialog;
   }
 
   &__container {
@@ -6585,6 +6588,7 @@ button.module-image__border-overlay:focus {
   display: grid;
   grid-template-rows: 44px 1fr;
   grid-template-columns: 1fr;
+  z-index: $z-index-module-emoji-picker;
 
   &__header {
     @extend %module-emoji-picker--ribbon;
@@ -7125,7 +7129,7 @@ button.module-image__border-overlay:focus {
     padding: 12px 0;
     margin-bottom: 6px;
     border-radius: 8px;
-    z-index: 2;
+    z-index: $z-index-__emoji-suggestions;
 
     @include popper-shadow();
 
@@ -7352,7 +7356,7 @@ button.module-image__border-overlay:focus {
 // Module: Scroll Down Button
 
 .module-scroll-down {
-  z-index: 100;
+  z-index: $z-index-module-scroll-down;
   position: absolute;
   right: 20px;
   bottom: 10px;
@@ -7562,7 +7566,7 @@ button.module-image__border-overlay:focus {
   background-color: $color-black-alpha-40;
 
   // react-contextmenu uses a z-index of 1000
-  z-index: 2000;
+  z-index: $z-index-module-shortcut-guide-modal;
 }
 
 .module-shortcut-guide-container {
@@ -7757,7 +7761,7 @@ button.module-image__border-overlay:focus {
 }
 
 .react-contextmenu--visible {
-  z-index: 1000;
+  z-index: $z-index-react-contextmenu--visible;
   opacity: 1;
 }
 

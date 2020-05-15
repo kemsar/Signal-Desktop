@@ -35,7 +35,7 @@ storiesOf('Components/RelinkDialog', module)
       <RelinkDialog {...defaultProps} isRegistrationDone={isRegistrationDone} />
     );
   })
-  .add('Iterations', () => {
+  .add('Iterations', (): any => {
     return permutations.map(({ props, title }) => (
       <>
         <h3>{title}</h3>

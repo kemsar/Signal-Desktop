@@ -63,8 +63,8 @@ describe('Settings', () => {
         sandbox.restore();
       });
 
-      it('should return false', () => {
-        assert.isFalse(Settings.isAudioNotificationSupported());
+      it('should return true', () => {
+        assert.isTrue(Settings.isAudioNotificationSupported());
       });
     });
   });

@@ -36,6 +36,9 @@ const {
   shell,
 } = electron;
 
+// for notification sounds
+app.commandLine.appendSwitch('--autoplay-policy','no-user-gesture-required');
+
 const appUserModelId = `org.whispersystems.${packageJson.name}`;
 console.log('Set Windows Application User Model ID (AUMID)', {
   appUserModelId,
@@ -59,8 +62,8 @@ function getMainWindow() {
 // Tray icon and related objects
 let tray = null;
 const startInTray = process.argv.some(arg => arg === '--start-in-tray');
-const usingTrayIcon =
-  startInTray || process.argv.some(arg => arg === '--use-tray-icon');
+const usingTrayIcon = true;
+  // startInTray || process.argv.some(arg => arg === '--use-tray-icon');
 
 const disableFlashFrame = process.argv.some(
   arg => arg === '--disable-flash-frame'
@@ -228,7 +231,7 @@ function handleCommonWindowEvents(window) {
 
 const DEFAULT_WIDTH = 800;
 const DEFAULT_HEIGHT = 610;
-const MIN_WIDTH = 680;
+const MIN_WIDTH = 300; // 640;
 const MIN_HEIGHT = 550;
 const BOUNDS_BUFFER = 100;
 
@@ -1167,6 +1170,45 @@ installSettingsGetter('notification-setting');
 installSettingsSetter('notification-setting');
 installSettingsGetter('audio-notification');
 installSettingsSetter('audio-notification');
+
+installSettingsGetter('audio-notification-file');
+
+// Setter is a little different for notification audio file because we need
+// to copy the file from the user's file system to a directory we
+// can consistently access....the userData directory.
+ipc.on('set-audio-notification-file', (event,value) => {
+  const name = 'audio-notification-file';
+
+  // get the filename
+  const filename = path.basename(value);
+
+  // if notifications directory doesn't exist in userData, create it
+  if(!fs.existsSync(path.join(app.getPath('userData'),'Notifications'))){
+    fs.mkdirSync(path.join(app.getPath('userData'),'Notifications'));
+  }
+
+  // destination file
+  const destination = path.join(app.getPath('userData'),'Notifications',filename);
+
+  // copy it
+  fs.copyFile(value, destination, (err) => {
+    if (err) throw err;
+    console.log(`${value} copied to ${destination}`);
+  });
+
+  // now update the setting
+  if (mainWindow && mainWindow.webContents) {
+    ipc.once(`set-success-${name}`, (_event, error) => {
+      const contents = event.sender;
+      if (contents.isDestroyed()) {
+        return;
+      }
+      contents.send(`set-success-${name}`, error);
+    });
+    mainWindow.webContents.send(`set-${name}`, destination);
+  }
+
+});
 
 installSettingsGetter('spell-check');
 installSettingsSetter('spell-check');

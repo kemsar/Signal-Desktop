@@ -27,6 +27,14 @@ test/test.js
 ts/**/*.js
 ts/protobuf/*.d.ts
 
+*.log
+
+package-lock\.json
+
+\.idea/
+
+package.json.bak
+
 # CSS Modules
 **/*.scss.d.ts
 
