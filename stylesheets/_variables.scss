@@ -179,7 +179,33 @@ $color-deep-red: #ff261f;
 
 // -- A few layout variables used cross-file
 
-$left-pane-width: 320px;
+$left-pane-width: 315px;
 $header-height: 48px;
 
 $ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
+
+$z-index-module-sticker-button__tooltip: 1;
+$z-index--module-image__bottom-overlay-z-index: 1;
+$z-index--module-image__text-container: 2;
+$z-index-module-image__close-button: 2;
+$z-index-module-attachments__close-button: 2;
+$z-index-module-staged-generic-attachment__close-button: 2;
+$z-index-module-caption-editor__close-button: 2;
+$z-index-module-composition-popper: 2;
+$z-index-__emoji-suggestions: 2;
+$z-index-module-message__metadata--with-image-no-caption: 2;
+$z-index-module-image__border-overlay: 2;
+$z-index-module-spinner__circle: 2;
+$z-index-module-spinner__arc: 3;
+$z-index-module-sticker-manager-preview-modal: 5;
+$z-index-module-confirmation-dialog: 5;
+$z-index--module-caption-editor: 20;
+$z-index-module-caption-editor__close-button: 21;
+$z-index-gutter: 50;
+$z-index-module-emoji-picker: 50;
+$z-index-module-sticker-picker: 50;
+$z-index-gutter-toggle: 100;
+$z-index-module-scroll-down: 100;
+$z-index-react-contextmenu--visible: 1000;
+$z-index-module-shortcut-guide-modal: 2000;
+$z-index-module-reaction-picker: 60;

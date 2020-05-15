@@ -138,6 +138,8 @@ try {
   installGetter('spell-check', 'getSpellCheck');
   installSetter('spell-check', 'setSpellCheck');
 
+installGetter('audio-notification-file', 'getAudioNotificationFile');
+installSetter('audio-notification-file', 'setAudioNotificationFile');
   window.getMediaPermissions = () =>
     new Promise((resolve, reject) => {
       ipc.once('get-success-media-permissions', (_event, error, value) => {
