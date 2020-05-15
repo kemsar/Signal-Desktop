@@ -377,7 +377,7 @@ export function reducer(
   if (action.type === 'stickers/STICKER_PACK_ADDED') {
     const { payload } = action;
     const newPack = {
-      stickers: {},
+      // stickers: {},
       ...payload,
     };
 

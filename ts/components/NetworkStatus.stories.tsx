@@ -72,7 +72,7 @@ storiesOf('Components/NetworkStatus', module)
       />
     );
   })
-  .add('Iterations', () => {
+  .add('Iterations', (): any => {
     return permutations.map(({ props, title }) => (
       <>
         <h3>{title}</h3>

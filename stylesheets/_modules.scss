@@ -5117,7 +5117,7 @@ button.module-image__border-overlay:focus {
   border-radius: 30px;
   position: relative;
   margin: 4px 0;
-  z-index: 2;
+  z-index: $z-index-module-reaction-picker;
 
   animation: {
     name: module-reaction-picker__background-fade;

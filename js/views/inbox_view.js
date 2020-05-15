@@ -122,15 +122,25 @@
       /* TOGGLE COLLAPSE OF THE LEFT PANE/GUTTER, RESIZING ELEMENTS AS APPROPRIATE */
       function toggleLeftPaneCollapse() {
         if(this.leftPaneCollapsed){
+
           // pane is collapsed so expand
           document.getElementById('gutter').style.width = null;
           document.querySelector('#gutter > div.left-pane-placeholder > div > div > div.module-left-pane__header > div > div.module-main-header__search').style.display=null;
           document.querySelector('body > div > div.gutter-toggle').style.left=null;
           document.getElementById('toggleGutterCollapseButton').classList.add('gutter-toggle__button-expanded');
           document.getElementById('toggleGutterCollapseButton').classList.remove('gutter-toggle__button-collapsed');
+
+          // Some contacts don't have an avatar...resize the label instead
+          Array.from(document.getElementsByClassName('module-avatar__label')).forEach((avatar) => {
+            avatar.classList.replace('module-avatar__label--28','module-avatar__label--52');
+          });
+
+          // Resize avatars
           Array.from(document.getElementsByClassName('module-avatar')).forEach((avatar) => {
             if(avatar.parentElement.className!=='module-main-header') avatar.classList.replace('module-avatar--28','module-avatar--52');
           });
+
+          // Reposition
           Array.from(document.getElementsByClassName('module-conversation-list-item')).forEach((item) => {
             const currentItem = item;
             currentItem.style.paddingLeft=null; // unset to return to default
@@ -156,9 +166,15 @@
           document.querySelector('body > div > div.gutter-toggle').style.left='42px';
           document.getElementById('toggleGutterCollapseButton').classList.remove('gutter-toggle__button-expanded');
           document.getElementById('toggleGutterCollapseButton').classList.add('gutter-toggle__button-collapsed');
+
           Array.from(document.getElementsByClassName('module-avatar')).forEach((avatar) => {
             avatar.classList.replace('module-avatar--52','module-avatar--28');
           });
+
+          Array.from(document.getElementsByClassName('module-avatar__label')).forEach((avatar) => {
+            avatar.classList.replace('module-avatar__label--52','module-avatar__label--28');
+          });
+
           Array.from(document.getElementsByClassName('module-conversation-list-item')).forEach((item) => {
             const currentItem = item;
             currentItem.style.paddingLeft='7px'; // from 16px

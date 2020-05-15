@@ -1268,7 +1268,7 @@ const stories: Array<MessageStory> = [
 ];
 
 stories.forEach(([chapterTitle, propsArr]) =>
-  book.add(chapterTitle, () =>
+  book.add(chapterTitle, (): any =>
     propsArr.map(
       (
         {

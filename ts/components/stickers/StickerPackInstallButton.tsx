@@ -8,12 +8,12 @@ export type OwnProps = {
   readonly blue?: boolean;
 };
 
-export type Props = OwnProps & React.HTMLProps<HTMLButtonElement>;
+export type Props = OwnProps & React.ComponentProps<'button'>;
 
-export const StickerPackInstallButton = React.forwardRef<
-  HTMLButtonElement,
-  Props
->(({ i18n, installed, blue, ...props }: Props, ref) => (
+export const StickerPackInstallButton = React.forwardRef<HTMLButtonElement, Props>
+((
+  { i18n, installed, blue, ...props }: Props,
+  ref) => (
   <button
     ref={ref}
     className={classNames({
