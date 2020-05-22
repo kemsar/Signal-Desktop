@@ -37,7 +37,7 @@ storiesOf('Components/Conversation/ReactionPicker', module)
       />
     );
   })
-  .add('Selected Reaction', () => {
+  .add('Selected Reaction', ():any => {
     return ['❤️', '👍', '👎', '😂', '😮', '😢', '😡'].map(e => (
       <div key={e} style={{ height: '100px' }}>
         <ReactionPicker

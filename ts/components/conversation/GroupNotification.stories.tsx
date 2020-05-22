@@ -333,7 +333,7 @@ const stories: Array<GroupNotificationStory> = [
   ],
 ];
 
-book.add('GroupNotification', () =>
+book.add('GroupNotification', ():any =>
   stories.map(([title, propsArray]) => (
     <>
       <h3>{title}</h3>

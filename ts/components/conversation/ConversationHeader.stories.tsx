@@ -211,7 +211,7 @@ const stories: Array<ConversationHeaderStory> = [
 stories.forEach(({ title, description, items }) =>
   book.add(
     title,
-    () =>
+    (): any =>
       items.map(({ title: subtitle, props }, i) => {
         return (
           <div key={i}>
