@@ -29,6 +29,9 @@ const getSticker = (
   stickerPath: string,
   tempPath: string
 ): StickerType | undefined => {
+
+  if (!stickerId) { return ; } // kemsar
+
   const pack = packs[packId];
   if (!pack) {
     return;

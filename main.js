@@ -17,6 +17,8 @@ const electron = require('electron');
 const packageJson = require('./package.json');
 const GlobalErrors = require('./app/global_errors');
 const { setup: setupSpellChecker } = require('./app/spell_check');
+const { Tray } = require('electron');
+
 
 GlobalErrors.addHandler();
 
@@ -62,7 +64,7 @@ function getMainWindow() {
 // Tray icon and related objects
 let tray = null;
 const startInTray = process.argv.some(arg => arg === '--start-in-tray');
-const usingTrayIcon = true;
+const usingTrayIcon = true; // kemsar
   // startInTray || process.argv.some(arg => arg === '--use-tray-icon');
 
 const disableFlashFrame = process.argv.some(
@@ -90,7 +92,7 @@ const createTrayIcon = require('./app/tray_icon');
 const dockIcon = require('./app/dock_icon');
 const ephemeralConfig = require('./app/ephemeral_config');
 const logging = require('./app/logging');
-const sql = require('./app/sql');
+const sql = require('./ts/sql/Server').default;
 const sqlChannels = require('./app/sql_channel');
 const windowState = require('./app/window_state');
 const { createTemplate } = require('./app/menu');
@@ -130,7 +132,8 @@ function showWindow() {
 
   // toggle the visibility of the show/hide tray icon menu entries
   if (tray) {
-    tray.updateContextMenu();
+    tray.destroy();
+    tray = createTrayIcon(getMainWindow, locale.messages);
   }
 
   // show the app on the Dock in case it was hidden before
@@ -191,7 +194,8 @@ function prepareURL(pathSegments, moreKeys) {
       version: app.getVersion(),
       buildExpiration: config.get('buildExpiration'),
       serverUrl: config.get('serverUrl'),
-      cdnUrl: config.get('cdnUrl'),
+      cdnUrl0: config.get('cdn').get('0'),
+      cdnUrl2: config.get('cdn').get('2'),
       certificateAuthority: config.get('certificateAuthority'),
       environment: config.environment,
       node_version: process.versions.node,
@@ -200,6 +204,7 @@ function prepareURL(pathSegments, moreKeys) {
       proxyUrl: process.env.HTTPS_PROXY || process.env.https_proxy,
       contentProxyUrl: config.contentProxyUrl,
       importMode: importMode ? true : undefined, // for stringify()
+      serverPublicParams: config.get('serverPublicParams'),
       serverTrustRoot: config.get('serverTrustRoot'),
       appStartInitialSpellcheckSetting,
       ...moreKeys,
@@ -1096,6 +1101,9 @@ ipc.on('restart', () => {
   app.relaunch();
   app.quit();
 });
+ipc.on('shutdown', () => {
+  app.quit();
+});
 
 ipc.on('set-auto-hide-menu-bar', (event, autoHide) => {
   if (mainWindow) {
@@ -1117,6 +1125,8 @@ ipc.on('close-about', () => {
 
 ipc.on('update-tray-icon', (event, unreadCount) => {
   if (tray) {
+    tray.destroy();
+    tray = createTrayIcon(getMainWindow, locale.messages);
     tray.updateIcon(unreadCount);
   }
 });
