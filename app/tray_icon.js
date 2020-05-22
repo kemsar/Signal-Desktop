@@ -9,7 +9,8 @@ let tray = null;
 
 function createTrayIcon(getMainWindow, messages) {
   // A smaller icon is needed on macOS
-  const iconSize = process.platform === 'darwin' ? '16' : '256';
+  let iconSize = process.platform === 'darwin' ? '16' : '256';
+  iconSize = process.platform === 'linux' ? '32' : iconSize;
   const iconNoNewMessages = path.join(
     __dirname,
     '..',
@@ -107,9 +108,10 @@ function createTrayIcon(getMainWindow, messages) {
     }
   };
 
-  tray.on('click', tray.showWindow);
+  tray.on('click', tray.showWindow );
 
   tray.setToolTip(messages.signalDesktop.message);
+
   tray.updateContextMenu();
 
   return tray;

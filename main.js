@@ -17,6 +17,8 @@ const electron = require('electron');
 const packageJson = require('./package.json');
 const GlobalErrors = require('./app/global_errors');
 const { setup: setupSpellChecker } = require('./app/spell_check');
+const { Tray } = require('electron');
+
 
 GlobalErrors.addHandler();
 
@@ -62,7 +64,7 @@ function getMainWindow() {
 // Tray icon and related objects
 let tray = null;
 const startInTray = process.argv.some(arg => arg === '--start-in-tray');
-const usingTrayIcon = true;
+const usingTrayIcon = true; // kemsar
   // startInTray || process.argv.some(arg => arg === '--use-tray-icon');
 
 const disableFlashFrame = process.argv.some(
@@ -130,7 +132,8 @@ function showWindow() {
 
   // toggle the visibility of the show/hide tray icon menu entries
   if (tray) {
-    tray.updateContextMenu();
+    tray.destroy();
+    tray = createTrayIcon(getMainWindow, locale.messages);
   }
 
   // show the app on the Dock in case it was hidden before
@@ -1122,6 +1125,8 @@ ipc.on('close-about', () => {
 
 ipc.on('update-tray-icon', (event, unreadCount) => {
   if (tray) {
+    tray.destroy();
+    tray = createTrayIcon(getMainWindow, locale.messages);
     tray.updateIcon(unreadCount);
   }
 });
